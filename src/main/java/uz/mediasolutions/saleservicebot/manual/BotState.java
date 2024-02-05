@@ -1,0 +1,17 @@
+package uz.mediasolutions.saleservicebot.manual;
+
+public enum BotState {
+    START,
+    CHOOSE_LANG,
+    ENTER_PHONE_NUMBER,
+    CHOOSE_MARKET,
+    PENDING,
+    IN_REVIEW,
+    INCORRECT_PHONE_FORMAT,
+    MENU,
+    CHOOSE_MENU,
+    SEND_SUGGESTION_COMPLAINT,
+    CHANGE_NAME,
+    CHANGE_PHONE_NUMBER, CHANGE_MARKET, CHANGE_LANGUAGE,
+
+}
