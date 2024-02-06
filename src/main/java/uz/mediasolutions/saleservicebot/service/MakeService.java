@@ -1,12 +1,16 @@
 package uz.mediasolutions.saleservicebot.service;
 
 import lombok.RequiredArgsConstructor;
+import net.bytebuddy.build.HashCodeAndEqualsPlugin;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -18,6 +22,7 @@ import uz.mediasolutions.saleservicebot.repository.*;
 import uz.mediasolutions.saleservicebot.utills.UTF8Control;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +34,8 @@ public class MakeService {
     private static final String CHANNEL_ID = "-1001903287909";
     private final TgUserRepository tgUserRepository;
     private final MarketRepository marketRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
     private final SuggestsComplaintsRepo suggestsComplaintsRepo;
     private final LanguageRepositoryPs languageRepository;
 
@@ -52,6 +59,30 @@ public class MakeService {
 
     public String getUserLanguage(String chatId) {
         return userLanguage.getOrDefault(chatId, UZ);
+    }
+
+    public List<String> getCategoryName(String languageCode) {
+        List<Category> categories = categoryRepository.findAll();
+        List<String> uz = new ArrayList<>();
+        List<String> ru = new ArrayList<>();
+        boolean isRu = languageCode.equals("Ru");
+        for (Category category : categories) {
+            if (isRu)
+                ru.add(category.getNameRu());
+            else
+                uz.add(category.getNameUz());
+        }
+        if (isRu)
+            return ru;
+        else
+            return uz;
+    }
+
+    public Category getCategoryByName(String name, String languageCode) {
+        if (languageCode.equals("Ru"))
+            return categoryRepository.findByNameRu(name);
+        else
+            return categoryRepository.findByNameUz(name);
     }
 
     private static final String BUNDLE_BASE_NAME = "messages";
@@ -124,7 +155,7 @@ public class MakeService {
                 tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
                 tgUserRepository.findByChatId(chatId).getMarket() != null &&
                 tgUserRepository.findByChatId(chatId).isAccepted()) {
-            return whenMenu(update);
+            return whenMenuForExistedUser(update);
         } else if (tgUserRepository.existsByChatId(chatId) &&
                 tgUserRepository.findByChatId(chatId).getName() != null &&
                 tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
@@ -378,6 +409,15 @@ public class MakeService {
 
     public SendMessage whenMenu(Update update) {
         String chatId = update.getCallbackQuery().getData().substring(6);
+        SendMessage sendMessage = new SendMessage(chatId,
+                getMessage(Message.MENU_MSG, getUserLanguage(chatId)));
+        sendMessage.setReplyMarkup(forMenu(update));
+        setUserState(chatId, BotState.CHOOSE_MENU);
+        return sendMessage;
+    }
+
+    public SendMessage whenMenuForExistedUser(Update update) {
+        String chatId = getChatId(update);
         SendMessage sendMessage = new SendMessage(chatId,
                 getMessage(Message.MENU_MSG, getUserLanguage(chatId)));
         sendMessage.setReplyMarkup(forMenu(update));
@@ -648,5 +688,121 @@ public class MakeService {
         sendMessage.setReplyMarkup(forMenu(update));
         setUserState(chatId, BotState.CHOOSE_MENU);
         return sendMessage;
+    }
+
+    public SendMessage whenOrder(Update update) {
+        String chatId = getChatId(update);
+        SendMessage sendMessage = new SendMessage(chatId,
+                getMessage(Message.CHOOSE_CATEGORY, getUserLanguage(chatId)));
+        sendMessage.setReplyMarkup(forOrder(update));
+        setUserState(chatId, BotState.CHOOSE_CATEGORY);
+        return sendMessage;
+    }
+
+    private ReplyKeyboardMarkup forOrder(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        Sort sort = Sort.by(Sort.Order.asc("number"));
+        List<Category> categories = categoryRepository.findAll(sort);
+
+        ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
+        List<KeyboardButton> keyboardButtons = new ArrayList<>();
+
+        if (language.equals("Uz")) {
+            for (Category category : categories)
+                keyboardButtons.add(new KeyboardButton(category.getNameUz()));
+        } else {
+            for (Category category : categories)
+                keyboardButtons.add(new KeyboardButton(category.getNameRu()));
+        }
+
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+        KeyboardButton button1 = new KeyboardButton(getMessage(Message.BACK, language));
+        KeyboardButton button2 = new KeyboardButton(getMessage(Message.BASKET, language));
+
+        KeyboardRow keyboardRow1 = new KeyboardRow();
+        keyboardRow1.add(button1);
+        keyboardRow1.add(button2);
+
+        keyboardRows.add(keyboardRow1);
+        KeyboardRow row = new KeyboardRow();
+
+        for (KeyboardButton keyboardButton : keyboardButtons) {
+            row.add(keyboardButton);
+            if (row.size() == 2) {
+                keyboardRows.add(row);
+                row = new KeyboardRow();
+            }
+        }
+
+        if (!row.isEmpty()) {
+            keyboardRows.add(row);
+        }
+
+        markup.setKeyboard(keyboardRows);
+        markup.setSelective(true);
+        markup.setResizeKeyboard(true);
+        return markup;
+    }
+
+    public SendMessage whenChosenCategory(Update update, String text) {
+        String chatId = getChatId(update);
+        SendMessage sendMessage = new SendMessage(chatId,
+                getMessage(Message.CATEGORY, getUserLanguage(chatId)) + " " + text + "\n" +
+                        getMessage(Message.PRODUCTS_FOR_CATEGORY, getUserLanguage(chatId)));
+        sendMessage.setReplyMarkup(forChosenCategory(update, text));
+        setUserState(chatId, BotState.CHOOSE_PRODUCT);
+        return sendMessage;
+    }
+
+    private ReplyKeyboardMarkup forChosenCategory(Update update, String text) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+        Category category = getCategoryByName(text, language);
+
+        Sort sort = Sort.by(Sort.Order.asc("number"));
+        List<Product> products = productRepository.findAllByCategoryId(category.getId(), sort);
+
+        ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
+        List<KeyboardButton> keyboardButtons = new ArrayList<>();
+
+        if (language.equals("Uz")) {
+            for (Product product : products)
+                keyboardButtons.add(new KeyboardButton(product.getNameUz()));
+        } else {
+            for (Product product : products)
+                keyboardButtons.add(new KeyboardButton(product.getNameRu()));
+        }
+
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+        KeyboardButton button1 = new KeyboardButton(getMessage(Message.BACK, language));
+        KeyboardButton button2 = new KeyboardButton(getMessage(Message.BASKET, language));
+
+        KeyboardRow keyboardRow1 = new KeyboardRow();
+        keyboardRow1.add(button1);
+        keyboardRow1.add(button2);
+
+        keyboardRows.add(keyboardRow1);
+        KeyboardRow row = new KeyboardRow();
+
+        for (KeyboardButton keyboardButton : keyboardButtons) {
+            row.add(keyboardButton);
+            if (row.size() == 2) {
+                keyboardRows.add(row);
+                row = new KeyboardRow();
+            }
+        }
+
+        if (!row.isEmpty()) {
+            keyboardRows.add(row);
+        }
+
+        markup.setKeyboard(keyboardRows);
+        markup.setSelective(true);
+        markup.setResizeKeyboard(true);
+        return markup;
     }
 }

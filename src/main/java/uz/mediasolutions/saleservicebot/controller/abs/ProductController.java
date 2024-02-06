@@ -10,7 +10,7 @@ import uz.mediasolutions.saleservicebot.utills.constants.Rest;
 import javax.validation.Valid;
 import java.util.UUID;
 
-@RestController(ProductController.PRODUCT)
+@RequestMapping(ProductController.PRODUCT)
 public interface ProductController {
 
     String PRODUCT = Rest.BASE_PATH + "product/";

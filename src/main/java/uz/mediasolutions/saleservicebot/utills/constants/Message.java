@@ -60,4 +60,9 @@ public interface Message {
     String REJECTED = "rejected";
     String ACCEPT = "accept";
     String REJECT = "reject";
+    String CHOOSE_CATEGORY = "choose.category";
+    String BACK = "back";
+    String BASKET = "basket";
+    String CATEGORY = "category";
+    String PRODUCTS_FOR_CATEGORY = "products.for.category";
 }
