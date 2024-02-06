@@ -10,6 +10,7 @@ import uz.mediasolutions.saleservicebot.payload.TranslateDto;
 import uz.mediasolutions.saleservicebot.service.abs.LanguageServicePs;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -34,7 +35,7 @@ public class LanguageControllerImpl implements LanguageController {
     }
 
     @Override
-    public ApiResult<?> createMainKey(HashMap<String, String> dto) {
-        return languageServicePs.createMainText(dto);
+    public ApiResult<?> createMainKey(List<TranslateDto> dtos) {
+        return languageServicePs.createMainText(dtos);
     }
 }

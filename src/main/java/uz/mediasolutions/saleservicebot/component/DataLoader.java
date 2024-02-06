@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.ApplicationContext;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
@@ -25,6 +26,7 @@ public class DataLoader implements CommandLineRunner {
     private final LanguageSourceRepositoryPs languageSourceRepositoryPs;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${spring.sql.init.mode}")
     private String mode;
@@ -59,7 +61,7 @@ public class DataLoader implements CommandLineRunner {
         User admin = User.builder()
                 .role(roleRepository.findByName(RoleName.ROLE_ADMIN))
                 .username("admin")
-                .password("admin")
+                .password(passwordEncoder.encode("Qwerty123@"))
                 .accountNonExpired(true)
                 .credentialsNonExpired(true)
                 .accountNonLocked(true)

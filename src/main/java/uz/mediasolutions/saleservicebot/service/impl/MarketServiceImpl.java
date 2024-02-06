@@ -2,6 +2,7 @@ package uz.mediasolutions.saleservicebot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,8 @@ public class MarketServiceImpl implements MarketService {
     public ApiResult<Page<MarketDTO>> getAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Market> markets = marketRepository.findAll(pageable);
-        return ApiResult.success(marketMapper.toDTOPage(markets));
+        Page<MarketDTO> dtoPage = new PageImpl<>(marketMapper.toDTOPage(markets));
+        return ApiResult.success(dtoPage);
     }
 
     @Override

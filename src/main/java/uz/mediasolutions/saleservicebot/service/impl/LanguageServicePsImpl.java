@@ -29,21 +29,30 @@ public class LanguageServicePsImpl implements LanguageServicePs {
     String primaryLang;
 
     @Override
-    public ApiResult<?> createMainText(HashMap<String, String> dto) {
-        String newWord = "";
-        for (Map.Entry<String, String> entry : dto.entrySet()) {
-            newWord = entry.getValue();
+    public ApiResult<?> createMainText(List<TranslateDto> dtos) {
+        for (TranslateDto dto : dtos) {
+            if (!languageRepository.existsByKey(dto.getKey())) {
+                LanguagePs languagePs = LanguagePs.builder()
+                        .key(dto.getKey())
+                        .primaryLang(primaryLang)
+                        .build();
+                LanguagePs savedLanguagePs = languageRepository.save(languagePs);
+                LanguageSourcePs uz = LanguageSourcePs.builder()
+                        .languagePs(savedLanguagePs)
+                        .language("Uz")
+                        .translation(dto.getTextUz())
+                        .build();
+                LanguageSourcePs ru = LanguageSourcePs.builder()
+                        .languagePs(savedLanguagePs)
+                        .language("Ru")
+                        .translation(dto.getTextRu())
+                        .build();
+                languageSourceRepositoryPs.saveAll(List.of(uz, ru));
+            }
         }
-        if (!languageRepository.existsByKey(newWord)) {
-            LanguagePs languagePs = LanguagePs.builder()
-                    .key(newWord)
-                    .primaryLang(primaryLang)
-                    .build();
-            languageRepository.save(languagePs);
-        }
+
         return ApiResult.success("CREATED SUCCESSFULLY");
     }
-
 
     @Override
     public ApiResult<?> createTranslation(TranslateDto dto) {
@@ -52,20 +61,27 @@ public class LanguageServicePsImpl implements LanguageServicePs {
             LanguagePs languagePs = byId.get();
             List<LanguageSourcePs> allByIdId = languageSourceRepositoryPs.findAllByLanguagePs_Id(languagePs.getId());
             if (!allByIdId.isEmpty()) {
-                LanguageSourcePs uz = allByIdId.get(0);
-                uz.setTranslation(dto.getTranslations().get(LanguageEnum.Uz) != null ? dto.getTranslations().get(LanguageEnum.Uz) : uz.getTranslation());
-                uz.setLanguage("Uz");
-
-                LanguageSourcePs ru = allByIdId.get(1);
-                ru.setTranslation(dto.getTranslations().get(LanguageEnum.Ru) != null ? dto.getTranslations().get(LanguageEnum.Ru) : ru.getTranslation());
-                ru.setLanguage("Ru");
-
-                languageSourceRepositoryPs.saveAll(allByIdId);
+                for (int i = 0; i < allByIdId.size(); i++) {
+                    if (allByIdId.get(i).getLanguage().equals("Uz")) {
+                        LanguageSourcePs uz = allByIdId.get(i);
+                        uz.setTranslation(dto.getTextUz() != null ? dto.getTextUz() : uz.getTranslation());
+                        uz.setLanguage("Uz");
+                        languageSourceRepositoryPs.save(uz);
+                    } else {
+                        languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Uz", dto.getTextUz()));
+                    }
+                    if (allByIdId.get(i).getLanguage().equals("Ru")) {
+                        LanguageSourcePs ru = allByIdId.get(i);
+                        ru.setTranslation(dto.getTextRu() != null ? dto.getTextRu() : ru.getTranslation());
+                        ru.setLanguage("Ru");
+                        languageSourceRepositoryPs.save(ru);
+                    } else {
+                        languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Ru", dto.getTextRu()));
+                    }
+                }
             } else {
-                HashMap<LanguageEnum, String> translations = dto.getTranslations();
-
-                languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Uz", translations.get(LanguageEnum.Uz) != null ? translations.get(LanguageEnum.Uz) : null));
-                languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Ru", translations.get(LanguageEnum.Ru) != null ? translations.get(LanguageEnum.Ru) : null));
+                languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Uz", dto.getTextUz()));
+                languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Ru", dto.getTextRu()));
             }
         }
         return ApiResult.success("SAVED SUCCESSFULLY");

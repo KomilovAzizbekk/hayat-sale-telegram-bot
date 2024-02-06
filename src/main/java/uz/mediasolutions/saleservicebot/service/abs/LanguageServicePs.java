@@ -6,6 +6,7 @@ import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.TranslateDto;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public interface LanguageServicePs {
@@ -16,6 +17,6 @@ public interface LanguageServicePs {
 
     ApiResult<?> createTranslation(TranslateDto dto);
 
-    ApiResult<?> createMainText(HashMap<String, String> dto);
+    ApiResult<?> createMainText(List<TranslateDto> dtos);
 
 }

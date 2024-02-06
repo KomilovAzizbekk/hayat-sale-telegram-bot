@@ -39,10 +39,10 @@ public class CommonUtils {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null, new ArrayList<>()));
     }
 
-    public static String createMessage(String mes, MessageSource messageSource, Object[] objects) {
-        Locale locale = LocaleContextHolder.getLocale();
-        return messageSource.getMessage(mes, objects, locale);
-    }
+//    public static String createMessage(String mes, MessageSource messageSource, Object[] objects) {
+//        Locale locale = LocaleContextHolder.getLocale();
+//        return messageSource.getMessage(mes, objects, locale);
+//    }
 
 
     // TIZIMDA TURGAN RequestContextHolder dan HttpServletRequest ni olamiz

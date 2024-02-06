@@ -1,14 +1,17 @@
 package uz.mediasolutions.saleservicebot.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.springframework.data.domain.Page;
 import uz.mediasolutions.saleservicebot.entity.Market;
 import uz.mediasolutions.saleservicebot.payload.MarketDTO;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface MarketMapper {
 
-    Page<MarketDTO> toDTOPage(Page<Market> markets);
+    List<MarketDTO> toDTOPage(Page<Market> markets);
 
     MarketDTO toDTO(Market market);
 

@@ -12,5 +12,7 @@ public class TranslateDto {
 
     private String key;
 
-    private HashMap<LanguageEnum, String> translations;
+    private String textUz;
+
+    private String textRu;
 }

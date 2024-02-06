@@ -4,40 +4,42 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
-import uz.mediasolutions.saleservicebot.payload.MarketDTO;
+import uz.mediasolutions.saleservicebot.payload.ProductDTO;
 import uz.mediasolutions.saleservicebot.utills.constants.Rest;
 
 import javax.validation.Valid;
+import java.util.UUID;
 
-@RequestMapping(MarketController.MARKET)
-public interface MarketController {
+@RestController(ProductController.PRODUCT)
+public interface ProductController {
 
-    String MARKET = Rest.BASE_PATH + "market/";
-    String GET_ALL_PAGE = "get-all";
+    String PRODUCT = Rest.BASE_PATH + "product/";
+    String GET_BY_CATEGORY_PAGE = "get-by-cat/{cId}";
     String GET_BY_ID = "get-by-id/{id}";
     String ADD = "add";
     String EDIT = "edit/{id}";
     String DELETE = "delete/{id}";
 
-    @GetMapping(GET_ALL_PAGE)
+    @GetMapping(GET_BY_CATEGORY_PAGE)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<Page<MarketDTO>> getAll(@RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
-                                      @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size);
-
+    ApiResult<Page<ProductDTO>> getAllByCategory(@PathVariable UUID cId,
+                                                 @RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
+                                                 @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size);
 
     @GetMapping(GET_BY_ID)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<MarketDTO> getById(@PathVariable Long id);
+    ApiResult<ProductDTO> getById(@PathVariable UUID id);
 
     @PostMapping(ADD)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<?> add(@RequestBody @Valid MarketDTO dto);
+    ApiResult<?> add(@RequestBody @Valid ProductDTO dto);
 
     @PutMapping(EDIT)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<?> edit(@PathVariable Long id, @RequestBody @Valid MarketDTO dto);
+    ApiResult<?> edit(@PathVariable UUID id, @RequestBody @Valid ProductDTO dto);
 
     @DeleteMapping(DELETE)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<?> delete(@PathVariable Long id);
+    ApiResult<?> delete(@PathVariable UUID id);
+
 }

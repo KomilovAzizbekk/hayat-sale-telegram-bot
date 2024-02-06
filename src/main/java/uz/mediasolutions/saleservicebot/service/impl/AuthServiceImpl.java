@@ -38,7 +38,6 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
     private final AuthenticationManager authenticationManager;
-    private final MessageSource messageSource;
 
 
     @Override
@@ -55,7 +54,6 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
         TokenDTO tokenDTO = generateToken(currentUser);
         return ApiResult.success(tokenDTO);
     }
-
 
     @Override
     public TokenDTO generateToken(User user) {
@@ -74,35 +72,31 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
 
     @Override
     public User checkUsernameAndPasswordAndEtcAndSetAuthenticationOrThrow(String username, String password) {
-        String message = CommonUtils.createMessage(Message.USER_NOT_FOUND_OR_DISABLED, messageSource, new Object[]{username, password});
         try {
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             return (User) authentication.getPrincipal();
         } catch (DisabledException | LockedException | CredentialsExpiredException | BadCredentialsException |
                  UsernameNotFoundException disabledException) {
-            throw RestException.restThrow(message, HttpStatus.UNAUTHORIZED);
+            throw RestException.restThrow(Message.USER_NOT_FOUND_OR_DISABLED, HttpStatus.UNAUTHORIZED);
         }
     }
 
     private void usernameNotFoundThrow(String username){
-        String message = CommonUtils.createMessage(Message.USERNAME_NOT_FOUND, messageSource, new Object[]{username});
         if (!userRepository.existsByUsername(username)) {
-            throw RestException.restThrow(message, HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(Message.USERNAME_NOT_FOUND, HttpStatus.BAD_REQUEST);
         }
     }
 
     public void checkPasswordEqualityIfErrorThrow(String password, String prePassword) {
-        String message = CommonUtils.createMessage(Message.MISMATCH_PASSWORDS, messageSource, null);
         if (Objects.nonNull(password) && !Objects.equals(password,prePassword)){
-            throw RestException.restThrow(message, HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(Message.MISMATCH_PASSWORDS, HttpStatus.BAD_REQUEST);
         }
     }
 
-    public void phoneNumberAndUsernameIfExistsThrow(String phoneNumber, String username) {
-        String message = CommonUtils.createMessage(Message.USER_ALREADY_REGISTERED, messageSource, new Object[]{phoneNumber, username});
-        if (userRepository.existsByPhoneNumberOrUsername(phoneNumber, username)) {
-            throw RestException.restThrow(message, HttpStatus.BAD_REQUEST);
+    public void usernameIfExistsThrow(String username) {
+        if (userRepository.existsByUsername(username)) {
+            throw RestException.restThrow(Message.USER_ALREADY_REGISTERED, HttpStatus.BAD_REQUEST);
         }
     }
 }

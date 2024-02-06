@@ -8,14 +8,14 @@ public interface Rest {
 
     String[] OPEN_PAGES_FOR_ALL_METHOD = {
             //swagger paths
-//            "/swagger-ui/**",
-//            "/api/mail/**",
-//            "/v2/api-docs",
-//            "/swagger-resources/**",
-//            "/configuration/ui",
-//            "/configuration/security",
-//            "/swagger-ui.html",
-//            "/webjars/**",
+            "/swagger-ui/**",
+            "/api/mail/**",
+            "/v2/api-docs",
+            "/swagger-resources/**",
+            "/configuration/ui",
+            "/configuration/security",
+            "/swagger-ui.html",
+            "/webjars/**",
             AuthController.AUTH + "**"
 
     };
