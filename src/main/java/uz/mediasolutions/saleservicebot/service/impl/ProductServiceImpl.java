@@ -44,24 +44,32 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ApiResult<?> add(ProductDTO dto) {
-        Product product = toEntity(dto);
-        productRepository.save(product);
-        return ApiResult.success("ADDED SUCCESSFULLY");
+        if (productRepository.existsByNumberAndCategoryId(dto.getNumber(), dto.getCategoryId()))
+            throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
+        else {
+            Product product = toEntity(dto);
+            productRepository.save(product);
+            return ApiResult.success("ADDED SUCCESSFULLY");
+        }
     }
 
     @Override
     public ApiResult<?> edit(UUID id, ProductDTO dto) {
-        Product product = productRepository.findById(id).orElseThrow(
-                () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
+        if (productRepository.existsByNumberAndCategoryId(dto.getNumber(), dto.getCategoryId()))
+            throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
+        else {
+            Product product = productRepository.findById(id).orElseThrow(
+                    () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
 
-        Category category = categoryRepository.findById(id).orElseThrow(
-                () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
+            Category category = categoryRepository.findById(id).orElseThrow(
+                    () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
 
-        product.setNameUz(dto.getNameUz());
-        product.setNameRu(dto.getNameRu());
-        product.setNumber(dto.getNumber());
-        product.setCategory(category);
-        return ApiResult.success("EDITED SUCCESSFULLY");
+            product.setNameUz(dto.getNameUz());
+            product.setNameRu(dto.getNameRu());
+            product.setNumber(dto.getNumber());
+            product.setCategory(category);
+            return ApiResult.success("EDITED SUCCESSFULLY");
+        }
     }
 
     @Override

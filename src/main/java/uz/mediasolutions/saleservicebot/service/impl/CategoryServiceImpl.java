@@ -42,19 +42,27 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public ApiResult<?> add(CategoryDTO categoryDTO) {
-        categoryRepository.save(categoryMapper.toEntity(categoryDTO));
-        return ApiResult.success("SAVED SUCCESSFULLY");
+        if (categoryRepository.existsByNumber(categoryDTO.getNumber()))
+            throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
+        else {
+            categoryRepository.save(categoryMapper.toEntity(categoryDTO));
+            return ApiResult.success("SAVED SUCCESSFULLY");
+        }
     }
 
     @Override
     public ApiResult<?> edit(UUID id, CategoryDTO categoryDTO) {
-        Category category = categoryRepository.findById(id).orElseThrow(
-                () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
-        category.setNameUz(categoryDTO.getNameUz());
-        category.setNameRu(category.getNameRu());
-        category.setNumber(categoryDTO.getNumber());
-        categoryRepository.save(category);
-        return ApiResult.success("EDITED SUCCESSFULLY");
+        if (categoryRepository.existsByNumber(categoryDTO.getNumber()))
+            throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
+        else {
+            Category category = categoryRepository.findById(id).orElseThrow(
+                    () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
+            category.setNameUz(categoryDTO.getNameUz());
+            category.setNameRu(category.getNameRu());
+            category.setNumber(categoryDTO.getNumber());
+            categoryRepository.save(category);
+            return ApiResult.success("EDITED SUCCESSFULLY");
+        }
     }
 
     @Override

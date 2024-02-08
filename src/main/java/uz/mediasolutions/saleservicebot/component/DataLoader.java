@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import uz.mediasolutions.saleservicebot.entity.*;
 import uz.mediasolutions.saleservicebot.enums.RoleName;
+import uz.mediasolutions.saleservicebot.enums.StatusName;
 import uz.mediasolutions.saleservicebot.repository.*;
 import uz.mediasolutions.saleservicebot.service.TgService;
 
@@ -27,6 +28,7 @@ public class DataLoader implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StatusRepository statusRepository;
 
     @Value("${spring.sql.init.mode}")
     private String mode;
@@ -46,8 +48,17 @@ public class DataLoader implements CommandLineRunner {
             addLangValues();
             addRole();
             addAdmin();
+            addStatus();
         }
 
+    }
+
+    public void addStatus() {
+        Status pending = Status.builder().name(StatusName.PENDING).build();
+        Status accepted = Status.builder().name(StatusName.ACCEPTED).build();
+        Status rejected = Status.builder().name(StatusName.REJECTED).build();
+        Status delivered = Status.builder().name(StatusName.DELIVERED).build();
+        statusRepository.saveAll(List.of(pending, accepted, rejected, delivered));
     }
 
     public void addRole() {
@@ -84,10 +95,22 @@ public class DataLoader implements CommandLineRunner {
     }
 
     public void addLangValues() {
-        LanguagePs chooseLang = LanguagePs.builder().key("choose.lang").primaryLang("Uz").build();
+        LanguagePs chooseLang = LanguagePs.builder().key("lang.same.for.2.lang").primaryLang("Uz").build();
         LanguageSourcePs chooseLangUz = LanguageSourcePs.builder().languagePs(chooseLang)
                 .language("Uz")
-                .translation("Тилни танланг")
+                .translation("Хизмат тилини танланг/Выберите язык обслуживания")
+                .build();
+
+        LanguagePs uzbek = LanguagePs.builder().key("uzbek").primaryLang("Uz").build();
+        LanguageSourcePs uzbekUz = LanguageSourcePs.builder().languagePs(uzbek)
+                .language("Uz")
+                .translation("\uD83C\uDDFA\uD83C\uDDFF Узбекча")
+                .build();
+
+        LanguagePs russian = LanguagePs.builder().key("russian").primaryLang("Uz").build();
+        LanguageSourcePs russianUz = LanguageSourcePs.builder().languagePs(russian)
+                .language("Uz")
+                .translation("\uD83C\uDDF7\uD83C\uDDFA Русский")
                 .build();
 
         LanguagePs enterName = LanguagePs.builder().key("enter.name").primaryLang("Uz").build();
@@ -114,9 +137,9 @@ public class DataLoader implements CommandLineRunner {
                 .translation("Дўконингиз жойлашган бозорни танланг.")
                 .build();
 
-        languageRepositoryPs.saveAll(List.of(chooseLang, enterName, enterPhoneNumber,
-                sharePhoneNumber, chooseMarket));
-        languageSourceRepositoryPs.saveAll(List.of(chooseLangUz, enterNameUz, enterPhoneNumberUz,
-                sharePhoneNumberUz, chooseMarketUz));
+        languageRepositoryPs.saveAll(List.of(chooseLang, uzbek, russian, enterName,
+                enterPhoneNumber, sharePhoneNumber, chooseMarket));
+        languageSourceRepositoryPs.saveAll(List.of(chooseLangUz, uzbekUz, russianUz,
+                enterNameUz, enterPhoneNumberUz, sharePhoneNumberUz, chooseMarketUz));
     }
 }

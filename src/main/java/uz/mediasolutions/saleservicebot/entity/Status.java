@@ -5,12 +5,13 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import uz.mediasolutions.saleservicebot.entity.template.AbsUUID;
+import uz.mediasolutions.saleservicebot.entity.template.AbsLong;
+import uz.mediasolutions.saleservicebot.enums.StatusName;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 @Getter
 @Setter
@@ -21,18 +22,13 @@ import javax.persistence.ManyToOne;
 @DynamicInsert
 @DynamicUpdate
 @EqualsAndHashCode(callSuper = true)
-@Entity(name = "category")
+@Entity(name = "status")
 @Where(clause = "deleted=false")
-@SQLDelete(sql = "UPDATE category SET deleted=true WHERE id=?")
-public class Category extends AbsUUID {
+@SQLDelete(sql = "UPDATE status SET deleted=true WHERE id=?")
+public class Status extends AbsLong {
 
-    @Column(name = "nameUz")
-    private String nameUz;
-
-    @Column(name = "nameRu")
-    private String nameRu;
-
-    @Column(unique = true, name = "number")
-    private Integer number;
+    @Column(name = "name")
+    @Enumerated(EnumType.STRING)
+    private StatusName name;
 
 }

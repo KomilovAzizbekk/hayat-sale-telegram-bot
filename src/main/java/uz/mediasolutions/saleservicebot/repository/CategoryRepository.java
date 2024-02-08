@@ -11,4 +11,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
     Category findByNameRu(String nameRu);
 
+    boolean existsByNumber(Integer number);
+
 }

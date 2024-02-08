@@ -12,6 +12,10 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TgService extends TelegramLongPollingBot {
@@ -20,12 +24,12 @@ public class TgService extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "sakaka_bot";
+        return "uygogo_bot";
     }
 
     @Override
     public String getBotToken() {
-        return "6052104473:AAEscLILevwPMcG_00PYqAf-Kpb7eIUCIGg";
+        return "5049026983:AAHjxVS4KdTmMLp4x_ir9khH4w1tB4h6pPQ";
     }
 
     @Override
@@ -83,6 +87,23 @@ public class TgService extends TelegramLongPollingBot {
             } else if (text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId))) &&
                     makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT)) {
                 execute(makeService.whenOrder(update));
+            } else if (makeService.getProductName(makeService.getUserLanguage(chatId)).contains(text) &&
+                    makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT)) {
+                execute(makeService.whenChosenProduct(update, text));
+            } else if (makeService.numbersUpTo().contains(text) &&
+                    makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) {
+                execute(makeService.whenAddProductToBasket(update, text));
+                execute(makeService.whenOrder(update));
+            } else if (text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId))) &&
+                    makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) {
+                execute(makeService.whenBackInProductCount(update));
+            } else if (text.substring(0, 6).equals(makeService.getMessage(Message.BASKET,
+                    makeService.getUserLanguage(chatId)).substring(0, 6))) {
+                deleteMessage(update);
+                execute(makeService.whenBasket(update));
+            } else if (makeService.getUserState(chatId).equals(BotState.WRITE_COMMENT)) {
+                execute(makeService.whenOrderCreated1(update));
+                execute(makeService.whenOrderCreated2(update));
             }
 
         } else if (update.hasMessage() && update.getMessage().hasContact()) {
@@ -114,8 +135,35 @@ public class TgService extends TelegramLongPollingBot {
             } else if (data.equals("changeLanguage")) {
                 execute(makeService.deleteMessageForCallback(update));
                 execute(makeService.whenChangeLanguage1(update));
+            } else if (data.equals("menu")) {
+                execute(makeService.deleteMessageForCallback(update));
+                execute(makeService.whenMenuForExistedUser(update));
+            } else if (data.equals("clear")) {
+                execute(makeService.whenClear(update));
+                execute(makeService.whenMenuForExistedUser(update));
+            } else if (data.startsWith("minus")) {
+                execute(makeService.whenMinus(update));
+            } else if (data.startsWith("delete")) {
+                execute(makeService.whenDelete(update));
+            } else if (data.startsWith("plus")) {
+                execute(makeService.whenPlus(update));
+            } else if (data.equals("officialOrder")) {
+                execute(makeService.whenOfficialOrder(update));
             }
+        } else if (update.hasMessage() && update.getMessage().hasLocation()) {
+            execute(makeService.whenComment(update));
         }
+
+    }
+
+    public void deleteMessage(Update update) throws TelegramApiException {
+        SendMessage sendMessageRemove = new SendMessage();
+        sendMessageRemove.setChatId(update.getMessage().getChatId().toString());
+        sendMessageRemove.setText(".");
+        sendMessageRemove.setReplyMarkup(new ReplyKeyboardRemove(true));
+        org.telegram.telegrambots.meta.api.objects.Message message = execute(sendMessageRemove);
+        DeleteMessage deleteMessage = new DeleteMessage(update.getMessage().getChatId().toString(), message.getMessageId());
+        execute(deleteMessage);
 
     }
 

@@ -1,13 +1,12 @@
 package uz.mediasolutions.saleservicebot.service;
 
 import lombok.RequiredArgsConstructor;
-import net.bytebuddy.build.HashCodeAndEqualsPlugin;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.Location;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
@@ -17,12 +16,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import uz.mediasolutions.saleservicebot.entity.*;
+import uz.mediasolutions.saleservicebot.enums.StatusName;
 import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.repository.*;
 import uz.mediasolutions.saleservicebot.utills.UTF8Control;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
-import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,6 +39,10 @@ public class MakeService {
     private final ProductRepository productRepository;
     private final SuggestsComplaintsRepo suggestsComplaintsRepo;
     private final LanguageRepositoryPs languageRepository;
+    private final BasketRepository basketRepository;
+    private final ChosenProductRepository chosenProductRepository;
+    private final OrderRepository orderRepository;
+    private final StatusRepository statusRepository;
 
     //FOR USER STATE
     private final Map<String, BotState> userStates = new HashMap<>();
@@ -61,6 +66,60 @@ public class MakeService {
         return userLanguage.getOrDefault(chatId, UZ);
     }
 
+    public List<String> numbersUpTo() {
+        List<String> numbers = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            numbers.add(i, String.valueOf(i + 1));
+        }
+        return numbers;
+    }
+
+    public String getChosenProductsNameAndCount(String chatId, String languageCode) {
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        chosenProducts.sort(Comparator.comparingLong(ChosenProduct::getId));
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < chosenProducts.size(); i++) {
+            if (languageCode.equals("Ru")) {
+                text.append(i + 1).append(") *")
+                        .append(chosenProducts.get(i).getProduct().getNameRu())
+                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append(" ").append(getMessage(Message.COUNT_X, languageCode))
+                        .append("\n\n");
+            } else {
+                text.append(i + 1).append(") *")
+                        .append(chosenProducts.get(i).getProduct().getNameUz())
+                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append(" ").append(getMessage(Message.COUNT_X, languageCode))
+                        .append("\n\n");
+            }
+        }
+        return text.toString();
+    }
+
+    public String getChosenProductsNameAndCountForOrder(String chatId, String languageCode) {
+        Order order = orderRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = order.getChosenProducts();
+        chosenProducts.sort(Comparator.comparingLong(ChosenProduct::getId));
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < chosenProducts.size(); i++) {
+            if (languageCode.equals("Ru")) {
+                text.append(i + 1).append(") *")
+                        .append(chosenProducts.get(i).getProduct().getNameRu())
+                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append(" ").append(getMessage(Message.COUNT_X, languageCode))
+                        .append("\n\n");
+            } else {
+                text.append(i + 1).append(") *")
+                        .append(chosenProducts.get(i).getProduct().getNameUz())
+                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append(" ").append(getMessage(Message.COUNT_X, languageCode))
+                        .append("\n\n");
+            }
+        }
+        return text.toString();
+    }
+
     public List<String> getCategoryName(String languageCode) {
         List<Category> categories = categoryRepository.findAll();
         List<String> uz = new ArrayList<>();
@@ -78,11 +137,64 @@ public class MakeService {
             return uz;
     }
 
+    public List<String> getProductName(String languageCode) {
+        List<Product> products = productRepository.findAll();
+        List<String> uz = new ArrayList<>();
+        List<String> ru = new ArrayList<>();
+        boolean isRu = languageCode.equals("Ru");
+        for (Product product : products) {
+            if (isRu)
+                ru.add(product.getNameRu());
+            else
+                uz.add(product.getNameUz());
+        }
+        if (isRu)
+            return ru;
+        else
+            return uz;
+    }
+
+    public String getOrderStatusName(String chatId) {
+        String language = getUserLanguage(chatId);
+        Order order = orderRepository.findByTgUserChatId(chatId);
+        if (order.getStatus().getName().equals(StatusName.PENDING)) {
+            return getMessage(Message.PENDING_ORDER, language);
+        } else if (order.getStatus().getName().equals(StatusName.ACCEPTED)) {
+            return getMessage(Message.ACCEPTED_ORDER, language);
+        } else if (order.getStatus().getName().equals(StatusName.REJECTED)) {
+            return getMessage(Message.REJECTED_ORDER, language);
+        } else if (order.getStatus().getName().equals(StatusName.DELIVERED)) {
+            return getMessage(Message.DELIVERED_ORDER, language);
+        }
+        return null;
+    }
+
+    public String getCategoryNameByProduct(Product product, String languageCode) {
+        if (languageCode.equals("Ru")) {
+            return product.getCategory().getNameRu();
+        } else
+            return product.getCategory().getNameUz();
+    }
+
+    public String getProductNameByProduct(Product product, String languageCode) {
+        if (languageCode.equals("Ru")) {
+            return product.getNameRu();
+        } else
+            return product.getNameUz();
+    }
+
     public Category getCategoryByName(String name, String languageCode) {
         if (languageCode.equals("Ru"))
             return categoryRepository.findByNameRu(name);
         else
             return categoryRepository.findByNameUz(name);
+    }
+
+    public Product getProductByName(String name, String languageCode) {
+        if (languageCode.equals("Ru"))
+            return productRepository.findByNameRu(name);
+        else
+            return productRepository.findByNameUz(name);
     }
 
     private static final String BUNDLE_BASE_NAME = "messages";
@@ -692,6 +804,13 @@ public class MakeService {
 
     public SendMessage whenOrder(Update update) {
         String chatId = getChatId(update);
+        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+
+        if (!basketRepository.existsByTgUserChatId(chatId)) {
+            Basket basket = Basket.builder().tgUser(tgUser).build();
+            basketRepository.save(basket);
+        }
+
         SendMessage sendMessage = new SendMessage(chatId,
                 getMessage(Message.CHOOSE_CATEGORY, getUserLanguage(chatId)));
         sendMessage.setReplyMarkup(forOrder(update));
@@ -702,6 +821,16 @@ public class MakeService {
     private ReplyKeyboardMarkup forOrder(Update update) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
+
+        int count = 0;
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        if (basket != null) {
+            List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+            for (ChosenProduct chosenProduct : chosenProducts) {
+                if (chosenProduct.getProduct() != null && chosenProduct.getCount() != null)
+                    count++;
+            }
+        }
 
         Sort sort = Sort.by(Sort.Order.asc("number"));
         List<Category> categories = categoryRepository.findAll(sort);
@@ -720,7 +849,8 @@ public class MakeService {
         List<KeyboardRow> keyboardRows = new ArrayList<>();
 
         KeyboardButton button1 = new KeyboardButton(getMessage(Message.BACK, language));
-        KeyboardButton button2 = new KeyboardButton(getMessage(Message.BASKET, language));
+        KeyboardButton button2 = new KeyboardButton(
+                getMessage(Message.BASKET, language) + "(" + count + ")");
 
         KeyboardRow keyboardRow1 = new KeyboardRow();
         keyboardRow1.add(button1);
@@ -750,9 +880,10 @@ public class MakeService {
     public SendMessage whenChosenCategory(Update update, String text) {
         String chatId = getChatId(update);
         SendMessage sendMessage = new SendMessage(chatId,
-                getMessage(Message.CATEGORY, getUserLanguage(chatId)) + " " + text + "\n" +
+                getMessage(Message.CATEGORY, getUserLanguage(chatId)) + " *" + text + "*\n" +
                         getMessage(Message.PRODUCTS_FOR_CATEGORY, getUserLanguage(chatId)));
         sendMessage.setReplyMarkup(forChosenCategory(update, text));
+        sendMessage.enableMarkdown(true);
         setUserState(chatId, BotState.CHOOSE_PRODUCT);
         return sendMessage;
     }
@@ -761,6 +892,16 @@ public class MakeService {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
         Category category = getCategoryByName(text, language);
+
+        int count = 0;
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        if (basket != null) {
+            List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+            for (ChosenProduct chosenProduct : chosenProducts) {
+                if (chosenProduct.getProduct() != null && chosenProduct.getCount() != null)
+                    count++;
+            }
+        }
 
         Sort sort = Sort.by(Sort.Order.asc("number"));
         List<Product> products = productRepository.findAllByCategoryId(category.getId(), sort);
@@ -779,7 +920,8 @@ public class MakeService {
         List<KeyboardRow> keyboardRows = new ArrayList<>();
 
         KeyboardButton button1 = new KeyboardButton(getMessage(Message.BACK, language));
-        KeyboardButton button2 = new KeyboardButton(getMessage(Message.BASKET, language));
+        KeyboardButton button2 = new KeyboardButton(
+                getMessage(Message.BASKET, language) + "(" + count + ")");
 
         KeyboardRow keyboardRow1 = new KeyboardRow();
         keyboardRow1.add(button1);
@@ -805,4 +947,486 @@ public class MakeService {
         markup.setResizeKeyboard(true);
         return markup;
     }
+
+    public SendMessage whenChosenProduct(Update update, String text) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+        Product product = getProductByName(text, language);
+        String category = getCategoryNameByProduct(product, language);
+        boolean a = false;
+
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        if (!chosenProducts.isEmpty()) {
+            for (ChosenProduct value : chosenProducts) {
+                if (getProductNameByProduct(value.getProduct(), language)
+                        .equals(getProductNameByProduct(product, language))) {
+                    value.setTurn(true);
+                    chosenProductRepository.save(value);
+                    a = true;
+                }
+
+            }
+            if (!a) {
+                ChosenProduct chosenProduct = ChosenProduct.builder().product(product).turn(true).build();
+                ChosenProduct saved = chosenProductRepository.save(chosenProduct);
+                basket.getChosenProducts().add(saved);
+            }
+        } else {
+            ChosenProduct chosenProduct = ChosenProduct.builder().product(product).turn(true).build();
+            ChosenProduct saved = chosenProductRepository.save(chosenProduct);
+            basket.getChosenProducts().add(saved);
+        }
+        basketRepository.save(basket);
+
+        SendMessage sendMessage = new SendMessage(chatId,
+                getMessage(Message.CATEGORY, language) + " *" + category + "*\n" +
+                        getMessage(Message.PRODUCT, language) + " *" + text + "*\n" +
+                        getMessage(Message.PRODUCT_COUNT, language));
+        sendMessage.setReplyMarkup(forChosenProduct(update));
+        sendMessage.enableMarkdown(true);
+        setUserState(chatId, BotState.PRODUCT_COUNT);
+        return sendMessage;
+    }
+
+    private ReplyKeyboardMarkup forChosenProduct(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        int count = 0;
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        if (basket != null) {
+            List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+            for (ChosenProduct chosenProduct : chosenProducts) {
+                if (chosenProduct.getProduct() != null && chosenProduct.getCount() != null)
+                    count++;
+            }
+        }
+
+        ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+        KeyboardButton button1 = new KeyboardButton(getMessage(Message.BACK, language));
+        KeyboardButton button2 = new KeyboardButton(
+                getMessage(Message.BASKET, language) + "(" + count + ")");
+
+        KeyboardRow keyboardRow1 = new KeyboardRow();
+        keyboardRow1.add(button1);
+        keyboardRow1.add(button2);
+        keyboardRows.add(keyboardRow1);
+
+        KeyboardRow row = new KeyboardRow();
+
+        for (int i = 0; i < 9; i++) {
+            KeyboardButton button = new KeyboardButton(String.valueOf(i + 1));
+            row.add(button);
+            if (row.size() == 3) {
+                keyboardRows.add(row);
+                row = new KeyboardRow();
+            }
+        }
+
+        if (!row.isEmpty()) {
+            keyboardRows.add(row);
+        }
+        markup.setKeyboard(keyboardRows);
+        markup.setSelective(true);
+        markup.setResizeKeyboard(true);
+        return markup;
+    }
+
+    public SendMessage whenAddProductToBasket(Update update, String text) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        ChosenProduct chosenProduct = null;
+        for (ChosenProduct product : chosenProducts) {
+            if (product.isTurn()) {
+                chosenProduct = product;
+                product.setTurn(false);
+                chosenProductRepository.save(product);
+            }
+        }
+        assert chosenProduct != null;
+        Integer count = chosenProduct.getCount();
+        if (count != null) {
+            count += Integer.parseInt(text);
+        } else {
+            count = Integer.parseInt(text);
+        }
+        chosenProduct.setCount(count);
+        chosenProductRepository.save(chosenProduct);
+
+        SendMessage sendMessage = new SendMessage(chatId,
+                getMessage(Message.PRODUCT, language) + " *" +
+                        getProductNameByProduct(chosenProduct.getProduct(), language) + "*\n" +
+                        getMessage(Message.COUNT, language) + " *" + text + "*\n" +
+                        getMessage(Message.PRODUCT_ADDED_TO_BASKET, language));
+        sendMessage.enableMarkdown(true);
+        setUserState(chatId, BotState.BASKET);
+        return sendMessage;
+    }
+
+    public SendMessage whenBackInProductCount(Update update) {
+        String chatId = getChatId(update);
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        ChosenProduct chosenProduct = null;
+        for (ChosenProduct product : chosenProducts) {
+            if (product.isTurn()) {
+                chosenProduct = product;
+                product.setTurn(false);
+                chosenProductRepository.save(product);
+            }
+        }
+        assert chosenProduct != null;
+        Product product = chosenProduct.getProduct();
+        String categoryName = getCategoryNameByProduct(product, getUserLanguage(chatId));
+
+        return whenChosenCategory(update, categoryName);
+    }
+
+    public SendMessage whenBasket(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        if (!basket.getChosenProducts().isEmpty()) {
+            List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+            for (ChosenProduct chosenProduct : chosenProducts) {
+                if (chosenProduct.getCount() == null) {
+                    try {
+                        basketRepository.deleteChosenProductsFromBasket(chosenProduct.getId());
+                    } catch (Exception ignored) {
+                    }
+                    chosenProductRepository.delete(chosenProduct);
+                }
+            }
+        }
+        SendMessage sendMessage;
+        if (!basket.getChosenProducts().isEmpty()) {
+            sendMessage = new SendMessage(chatId,
+                    getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
+                            getChosenProductsNameAndCount(chatId, language));
+            sendMessage.setReplyMarkup(forWhenBasketInline(update));
+            sendMessage.enableMarkdown(true);
+        } else {
+            sendMessage = new SendMessage(chatId,
+                    getMessage(Message.EMPTY_BASKET, getUserLanguage(chatId)));
+            sendMessage.setReplyMarkup(forMenu(update));
+            setUserState(chatId, BotState.CHOOSE_MENU);
+        }
+        return sendMessage;
+    }
+
+    private InlineKeyboardMarkup forWhenBasketInline(Update update) {
+        String chatId = getChatId(update);
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        chosenProducts.sort(Comparator.comparingLong(ChosenProduct::getId));
+
+        for (ChosenProduct chosenProduct : chosenProducts) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+
+            InlineKeyboardButton button1 = new InlineKeyboardButton();
+            InlineKeyboardButton button2 = new InlineKeyboardButton();
+            InlineKeyboardButton button3 = new InlineKeyboardButton();
+            button1.setText("➖");
+            button2.setText("❌");
+            button3.setText("➕");
+
+            button1.setCallbackData("minus" + chosenProduct.getId());
+            button2.setCallbackData("delete" + chosenProduct.getId());
+            button3.setCallbackData("plus" + chosenProduct.getId());
+
+            row.add(button1);
+            row.add(button2);
+            row.add(button3);
+
+            keyboardRows.add(row);
+        }
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        List<InlineKeyboardButton> row3 = new ArrayList<>();
+
+        InlineKeyboardButton button1 = new InlineKeyboardButton();
+        InlineKeyboardButton button2 = new InlineKeyboardButton();
+        InlineKeyboardButton button3 = new InlineKeyboardButton();
+
+        button1.setText(getMessage(Message.CLEAR_BASKET, getUserLanguage(chatId)));
+        button2.setText(getMessage(Message.OFFICIAL_ORDER, getUserLanguage(chatId)));
+        button3.setText(getMessage(Message.BACK_TO_MENU, getUserLanguage(chatId)));
+
+        button1.setCallbackData("clear");
+        button2.setCallbackData("officialOrder");
+        button3.setCallbackData("menu");
+
+        row1.add(button1);
+        row2.add(button2);
+        row3.add(button3);
+
+        keyboardRows.add(row1);
+        keyboardRows.add(row2);
+        keyboardRows.add(row3);
+
+        markupInline.setKeyboard(keyboardRows);
+        return markupInline;
+    }
+
+    public EditMessageText whenClear(Update update) {
+        String chatId = getChatId(update);
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        chosenProductRepository.deleteAll(basket.getChosenProducts());
+        basket.setChosenProducts(null);
+        basketRepository.save(basket);
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(chatId);
+        editMessageText.setText(getMessage(Message.BASKET_CLEARED, getUserLanguage(chatId)));
+        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        return editMessageText;
+    }
+
+    public EditMessageText whenMinus(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        Long chosenProductId = Long.valueOf(update.getCallbackQuery().getData().substring(5));
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        for (ChosenProduct chosenProduct : chosenProducts) {
+            if (Objects.equals(chosenProduct.getId(), chosenProductId)) {
+                if (chosenProduct.getCount() > 1) {
+                    chosenProduct.setCount(chosenProduct.getCount() - 1);
+                    chosenProductRepository.save(chosenProduct);
+                } else {
+                    try {
+                        basketRepository.deleteChosenProductsFromBasket(chosenProduct.getId());
+                    } catch (Exception ignored) {
+                    }
+                    chosenProductRepository.delete(chosenProduct);
+                }
+            }
+        }
+
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(chatId);
+        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessageText.setReplyMarkup(forWhenBasketInline(update));
+        editMessageText.enableMarkdown(true);
+        editMessageText.setText(getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
+                getChosenProductsNameAndCount(chatId, language));
+        return editMessageText;
+    }
+
+    public EditMessageText whenDelete(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        Long chosenProductId = Long.valueOf(update.getCallbackQuery().getData().substring(6));
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        for (ChosenProduct chosenProduct : chosenProducts) {
+            if (Objects.equals(chosenProduct.getId(), chosenProductId)) {
+                try {
+                    basketRepository.deleteChosenProductsFromBasket(chosenProduct.getId());
+                } catch (Exception ignored) {
+                }
+                chosenProductRepository.delete(chosenProduct);
+            }
+        }
+
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(chatId);
+        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessageText.setReplyMarkup(forWhenBasketInline(update));
+        editMessageText.enableMarkdown(true);
+        editMessageText.setText(getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
+                getChosenProductsNameAndCount(chatId, language));
+        return editMessageText;
+    }
+
+    public EditMessageText whenPlus(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        Long chosenProductId = Long.valueOf(update.getCallbackQuery().getData().substring(4));
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        for (ChosenProduct chosenProduct : chosenProducts) {
+            if (Objects.equals(chosenProduct.getId(), chosenProductId)) {
+                chosenProduct.setCount(chosenProduct.getCount() + 1);
+                chosenProductRepository.save(chosenProduct);
+            }
+        }
+
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(chatId);
+        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessageText.setReplyMarkup(forWhenBasketInline(update));
+        editMessageText.enableMarkdown(true);
+        editMessageText.setText(getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
+                getChosenProductsNameAndCount(chatId, language));
+        return editMessageText;
+    }
+
+    public SendMessage whenOfficialOrder(Update update) {
+        String chatId = getChatId(update);
+        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        Order order = Order.builder().tgUser(tgUser)
+                .chosenProducts(basket.getChosenProducts())
+                .status(statusRepository.findByName(StatusName.PENDING)).build();
+        orderRepository.save(order);
+
+    SendMessage sendMessage = new SendMessage(chatId,
+            getMessage(Message.SEND_LOCATION, getUserLanguage(chatId)));
+        sendMessage.setReplyMarkup(
+
+    forSendLocation(update));
+        return sendMessage;
+}
+
+private ReplyKeyboardMarkup forSendLocation(Update update) {
+    ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
+    List<KeyboardRow> rowList = new ArrayList<>();
+    KeyboardRow row1 = new KeyboardRow();
+
+    KeyboardButton button1 = new KeyboardButton();
+
+    button1.setText(getMessage(Message.FOR_LOCATION, getUserLanguage(getChatId(update))));
+    button1.setRequestLocation(true);
+
+    row1.add(button1);
+
+    rowList.add(row1);
+    markup.setKeyboard(rowList);
+    markup.setSelective(true);
+    markup.setResizeKeyboard(true);
+    return markup;
+}
+
+public SendMessage whenComment(Update update) {
+    String chatId = getChatId(update);
+    Order order = orderRepository.findByTgUserChatId(chatId);
+    Location location = update.getMessage().getLocation();
+    order.setLan(location.getLongitude());
+    order.setLat(location.getLatitude());
+    orderRepository.save(order);
+
+    SendMessage sendMessage = new SendMessage(chatId,
+            getMessage(Message.SEND_COMMENT, getUserLanguage(chatId)));
+    sendMessage.setReplyMarkup(forSendComment(update));
+    setUserState(chatId, BotState.WRITE_COMMENT);
+    return sendMessage;
+}
+
+private ReplyKeyboardMarkup forSendComment(Update update) {
+    ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
+    List<KeyboardRow> rowList = new ArrayList<>();
+    KeyboardRow row1 = new KeyboardRow();
+
+    KeyboardButton button1 = new KeyboardButton();
+
+    button1.setText(getMessage(Message.SKIP_COMMENT, getUserLanguage(getChatId(update))));
+
+    row1.add(button1);
+
+    rowList.add(row1);
+    markup.setKeyboard(rowList);
+    markup.setSelective(true);
+    markup.setResizeKeyboard(true);
+    return markup;
+}
+
+public SendMessage whenOrderCreated1(Update update) {
+    String chatId = getChatId(update);
+
+    Order order = orderRepository.findByTgUserChatId(chatId);
+    if (update.getMessage().getText()
+            .equals(getMessage(Message.SKIP_COMMENT, getUserLanguage(chatId)))) {
+        order.setComment(null);
+    } else {
+        order.setComment(update.getMessage().getText());
+    }
+    order.setOrderedTime(LocalDateTime.now());
+    orderRepository.save(order);
+
+    SendMessage sendMessage = new SendMessage(chatId,
+            String.format(getMessage(Message.ORDER_CREATED, getUserLanguage(chatId)), order.getId()));
+    sendMessage.enableMarkdown(true);
+    sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
+    return sendMessage;
+}
+
+public SendMessage whenOrderCreated2(Update update) {
+    String chatId = getChatId(update);
+    String language = getUserLanguage(chatId);
+
+    Order order = orderRepository.findByTgUserChatId(chatId);
+    String name = order.getTgUser().getName();
+    String phoneNumber = order.getTgUser().getPhoneNumber();
+    String date = order.getOrderedTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss"));
+    String comment = order.getComment();
+
+    SendMessage sendMessage = new SendMessage(CHANNEL_ID,
+            "*" + getMessage(Message.ORDER, language) + order.getId() + "*\n\n" +
+                    getMessage(Message.NAME, language) + " " + name + "\n" +
+                    getMessage(Message.PHONE_NUMBER, language) + " " + phoneNumber + "\n" +
+                    getMessage(Message.MARKET, language) + " " + getMarketNameByUser(chatId, language) + "\n\n" +
+                    getMessage(Message.FOR_COURIER, language) + " " + "\n" +
+                    getMessage(Message.DATE, language) + " " + date + "\n\n" +
+                    getChosenProductsNameAndCountForOrder(chatId, language) +
+                    getMessage(Message.COMMENT, language) + " " + returnComment(comment, language) + "\n" +
+                    getMessage(Message.ORDER_STATUS, language) + " " + getOrderStatusName(chatId));
+    sendMessage.setReplyMarkup(forOrderCreated2(update));
+    sendMessage.enableMarkdown(true);
+    setUserState(chatId, BotState.ORDER_COMPLETE);
+    return sendMessage;
+}
+
+public String returnComment(String comment, String languageCode) {
+    return comment == null ? getMessage(Message.NO_COMMENT, languageCode) : comment;
+}
+
+private InlineKeyboardMarkup forOrderCreated2(Update update) {
+    String chatId = getChatId(update);
+
+    InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+    List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+
+    InlineKeyboardButton button1 = new InlineKeyboardButton();
+    InlineKeyboardButton button2 = new InlineKeyboardButton();
+    InlineKeyboardButton button3 = new InlineKeyboardButton();
+    InlineKeyboardButton button4 = new InlineKeyboardButton();
+
+    button1.setText(getMessage(Message.ONE_THREE_HOUR, getUserLanguage(chatId)));
+    button2.setText(getMessage(Message.ONE_DAY, getUserLanguage(chatId)));
+    button3.setText(getMessage(Message.ONE_THREE_DAY, getUserLanguage(chatId)));
+    button4.setText(getMessage(Message.REJECT, getUserLanguage(chatId)));
+
+    button1.setCallbackData("accept" + update.getMessage().getChatId());
+    button2.setCallbackData("reject" + update.getMessage().getChatId());
+    button3.setCallbackData("reject" + update.getMessage().getChatId());
+    button4.setCallbackData("reject" + update.getMessage().getChatId());
+
+    List<InlineKeyboardButton> row1 = new ArrayList<>();
+    List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+    row1.add(button1);
+    row1.add(button2);
+    row2.add(button3);
+    row2.add(button4);
+
+    rowsInline.add(row1);
+    rowsInline.add(row2);
+
+    markupInline.setKeyboard(rowsInline);
+
+    return markupInline;
+}
 }

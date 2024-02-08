@@ -54,6 +54,7 @@ public interface Message {
     String PHONE_NUMBER_CHANGED = "phone.number.changed";
     String PHONE_NUMBER_EXISTED = "phone.number.existed";
     String PLEASE_WAIT = "please.wait";
+
     String MARKET_CHANGED = "market.changed";
     String LANGUAGE_CHANGED = "language.changed";
     String ACCEPTED = "accepted";
@@ -65,4 +66,36 @@ public interface Message {
     String BASKET = "basket";
     String CATEGORY = "category";
     String PRODUCTS_FOR_CATEGORY = "products.for.category";
+    String PRODUCT = "product";
+    String PRODUCT_COUNT = "product.count";
+    String COUNT = "count";
+    String PRODUCT_ADDED_TO_BASKET = "product.added.to.basket";
+    String BACK_TO_MENU = "back.to.menu";
+    String OFFICIAL_ORDER = "official.order";
+    String CLEAR_BASKET = "clear.basket";
+    String PRODUCTS_IN_BASKET = "products.in.basket";
+    String BASKET_CLEARED = "basket.cleared";
+    String EMPTY_BASKET = "empty.basket";
+    String COUNT_X = "count.x";
+    String SEND_LOCATION = "send.location";
+    String FOR_LOCATION = "for.location";
+    String SEND_COMMENT = "send.comment";
+    String SKIP_COMMENT = "skip.comment";
+    String ORDER_CREATED = "order.created";
+    String ORDER_ACCEPTED = "order.accepted";
+    String ORDER_REJECTED = "order.rejected";
+    String ORDER_DELIVERED = "order.delivered";
+    String ORDER = "order";
+    String FOR_COURIER = "for.courier";
+    String DATE = "date";
+    String COMMENT = "comment";
+    String ORDER_STATUS = "order.status";
+    String PENDING_ORDER = "pending.order";
+    String ACCEPTED_ORDER = "accepted.order";
+    String REJECTED_ORDER = "rejected.order";
+    String DELIVERED_ORDER = "delivered.order";
+    String ONE_THREE_HOUR = "one.three.hour";
+    String ONE_DAY = "one.day";
+    String ONE_THREE_DAY = "one.three.day";
+    String NO_COMMENT = "no.comment";
 }
