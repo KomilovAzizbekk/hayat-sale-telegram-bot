@@ -7,7 +7,9 @@ import uz.mediasolutions.saleservicebot.payload.ProductDTO;
 import java.util.UUID;
 
 public interface ProductService {
-    ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size);
+    ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size, String name);
+
+    ApiResult<Page<ProductDTO>> getAll(int page, int size, String name);
 
     ApiResult<ProductDTO> getById(UUID id);
 

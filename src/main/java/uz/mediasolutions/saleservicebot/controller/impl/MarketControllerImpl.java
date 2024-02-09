@@ -15,8 +15,8 @@ public class MarketControllerImpl implements MarketController {
     private final MarketService marketService;
 
     @Override
-    public ApiResult<Page<MarketDTO>> getAll(int page, int size) {
-        return marketService.getAll(page, size);
+    public ApiResult<Page<MarketDTO>> getAll(int page, int size, String name) {
+        return marketService.getAll(page, size, name);
     }
 
     @Override

@@ -24,7 +24,8 @@ public interface CategoryController {
     @GetMapping(GET_ALL_PAGE)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
     ApiResult<Page<CategoryDTO>> getAllPage(@RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
-                                            @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size);
+                                            @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size,
+                                            @RequestParam(defaultValue = "null") String name);
 
     @GetMapping(GET_BY_ID)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")

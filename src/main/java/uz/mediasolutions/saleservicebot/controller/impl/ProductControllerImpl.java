@@ -17,8 +17,13 @@ public class ProductControllerImpl implements ProductController {
     private final ProductService productService;
 
     @Override
-    public ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size) {
-        return productService.getAllByCategory(cId, page, size);
+    public ApiResult<Page<ProductDTO>> getAll(int page, int size, String name) {
+        return productService.getAll(page, size, name);
+    }
+
+    @Override
+    public ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size, String name) {
+        return productService.getAllByCategory(cId, page, size, name);
     }
 
     @Override

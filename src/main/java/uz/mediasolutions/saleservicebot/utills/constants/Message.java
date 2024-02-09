@@ -31,6 +31,7 @@ public interface Message {
     String IN_REVIEW_MESSAGE_2 = "in.review.message2";
     String INCORRECT_PHONE_FORMAT = "incorrect.phone.format";
     String ACCEPTED_USER_MSG = "accepted.user.msg";
+    String REJECTED_USER_MSG = "rejected.user.msg";
     String MENU_MSG = "menu.msg";
     String MENU_ORDER = "menu.order";
     String MENU_PRICE_LIST = "menu.price.list";
@@ -54,7 +55,6 @@ public interface Message {
     String PHONE_NUMBER_CHANGED = "phone.number.changed";
     String PHONE_NUMBER_EXISTED = "phone.number.existed";
     String PLEASE_WAIT = "please.wait";
-
     String MARKET_CHANGED = "market.changed";
     String LANGUAGE_CHANGED = "language.changed";
     String ACCEPTED = "accepted";
@@ -98,4 +98,5 @@ public interface Message {
     String ONE_DAY = "one.day";
     String ONE_THREE_DAY = "one.three.day";
     String NO_COMMENT = "no.comment";
+    String LINK_COURIER = "link.courier";
 }

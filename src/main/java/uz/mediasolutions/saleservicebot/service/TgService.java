@@ -98,7 +98,10 @@ public class TgService extends TelegramLongPollingBot {
                     makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) {
                 execute(makeService.whenBackInProductCount(update));
             } else if (text.substring(0, 6).equals(makeService.getMessage(Message.BASKET,
-                    makeService.getUserLanguage(chatId)).substring(0, 6))) {
+                    makeService.getUserLanguage(chatId)).substring(0, 6)) &&
+                    (makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) ||
+                     makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) ||
+                     makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT))) {
                 deleteMessage(update);
                 execute(makeService.whenBasket(update));
             } else if (makeService.getUserState(chatId).equals(BotState.WRITE_COMMENT)) {
@@ -117,13 +120,13 @@ public class TgService extends TelegramLongPollingBot {
             }
         } else if (update.hasCallbackQuery()) {
             String data = update.getCallbackQuery().getData();
-            String chatId = update.getCallbackQuery().getMessage().getChatId().toString();
             if (data.startsWith("accept")) {
                 execute(makeService.acceptUser(update));
                 execute(makeService.whenAcceptSendMessageToUser(update));
                 execute(makeService.whenMenu(update));
             } else if (data.startsWith("reject")) {
-//                execute(makeService.rejectUser(update));
+                execute(makeService.rejectUser(update));
+                execute(makeService.whenRejectSendMessageToUser(update));
             } else if (data.equals("changeName")) {
                 execute(makeService.whenChangeName1(update));
             } else if (data.equals("changePhone")) {
@@ -148,7 +151,20 @@ public class TgService extends TelegramLongPollingBot {
             } else if (data.startsWith("plus")) {
                 execute(makeService.whenPlus(update));
             } else if (data.equals("officialOrder")) {
+                execute(makeService.whenOfficialOrder1(update));
                 execute(makeService.whenOfficialOrder(update));
+            } else if (data.startsWith("111")) {
+                execute(makeService.whenAcceptOrder1(update));
+                execute(makeService.whenAcceptOrderForChannel(update));
+            } else if (data.startsWith("222")) {
+                execute(makeService.whenAcceptOrder2(update));
+                execute(makeService.whenAcceptOrderForChannel(update));
+            } else if (data.startsWith("333")) {
+                execute(makeService.whenAcceptOrder3(update));
+                execute(makeService.whenAcceptOrderForChannel(update));
+            } else if (data.startsWith("444")) {
+                execute(makeService.whenRejectOrder1(update));
+                execute(makeService.whenRejectOrder2(update));
             }
         } else if (update.hasMessage() && update.getMessage().hasLocation()) {
             execute(makeService.whenComment(update));

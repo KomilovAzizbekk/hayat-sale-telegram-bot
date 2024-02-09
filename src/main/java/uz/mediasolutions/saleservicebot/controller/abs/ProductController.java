@@ -14,17 +14,25 @@ import java.util.UUID;
 public interface ProductController {
 
     String PRODUCT = Rest.BASE_PATH + "product/";
+    String GET_ALL = "get-all";
     String GET_BY_CATEGORY_PAGE = "get-by-cat/{cId}";
     String GET_BY_ID = "get-by-id/{id}";
     String ADD = "add";
     String EDIT = "edit/{id}";
     String DELETE = "delete/{id}";
 
+    @GetMapping(GET_ALL)
+    @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
+    ApiResult<Page<ProductDTO>> getAll(@RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
+                                       @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size,
+                                       @RequestParam(defaultValue = "null") String name);
+
     @GetMapping(GET_BY_CATEGORY_PAGE)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
     ApiResult<Page<ProductDTO>> getAllByCategory(@PathVariable UUID cId,
                                                  @RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
-                                                 @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size);
+                                                 @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size,
+                                                 @RequestParam(defaultValue = "null") String name);
 
     @GetMapping(GET_BY_ID)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")

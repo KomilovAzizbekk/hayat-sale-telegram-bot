@@ -5,7 +5,7 @@ import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.MarketDTO;
 
 public interface MarketService {
-    ApiResult<Page<MarketDTO>> getAll(int page, int size);
+    ApiResult<Page<MarketDTO>> getAll(int page, int size, String name);
 
     ApiResult<MarketDTO> getById(Long id);
 

@@ -23,11 +23,15 @@ public class MarketServiceImpl implements MarketService {
     private final MarketMapper marketMapper;
 
     @Override
-    public ApiResult<Page<MarketDTO>> getAll(int page, int size) {
+    public ApiResult<Page<MarketDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
+        if (!name.equals("null")) {
+            Page<Market> markets = marketRepository
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name, pageable);
+            return ApiResult.success(new PageImpl<>(marketMapper.toDTOPage(markets)));
+        }
         Page<Market> markets = marketRepository.findAll(pageable);
-        Page<MarketDTO> dtoPage = new PageImpl<>(marketMapper.toDTOPage(markets));
-        return ApiResult.success(dtoPage);
+        return ApiResult.success(new PageImpl<>(marketMapper.toDTOPage(markets)));
     }
 
     @Override

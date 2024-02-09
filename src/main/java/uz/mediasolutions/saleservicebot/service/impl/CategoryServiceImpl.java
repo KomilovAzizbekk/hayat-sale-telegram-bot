@@ -26,11 +26,15 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper categoryMapper;
 
     @Override
-    public ApiResult<Page<CategoryDTO>> getAll(int page, int size) {
+    public ApiResult<Page<CategoryDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
+        if (!name.equals("null")) {
+            Page<Category> categories = categoryRepository.
+                    findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name, pageable);
+            return ApiResult.success(new PageImpl<>(categoryMapper.toDTOPage(categories)));
+        }
         Page<Category> categories = categoryRepository.findAll(pageable);
-        Page<CategoryDTO> dtoPage = new PageImpl<>(categoryMapper.toDTOPage(categories));
-        return ApiResult.success(dtoPage);
+        return ApiResult.success(new PageImpl<>(categoryMapper.toDTOPage(categories)));
     }
 
     @Override

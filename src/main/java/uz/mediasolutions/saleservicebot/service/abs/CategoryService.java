@@ -7,7 +7,7 @@ import uz.mediasolutions.saleservicebot.payload.CategoryDTO;
 import java.util.UUID;
 
 public interface CategoryService {
-    ApiResult<Page<CategoryDTO>> getAll(int page, int size);
+    ApiResult<Page<CategoryDTO>> getAll(int page, int size, String name);
 
     ApiResult<CategoryDTO> getById(UUID id);
 

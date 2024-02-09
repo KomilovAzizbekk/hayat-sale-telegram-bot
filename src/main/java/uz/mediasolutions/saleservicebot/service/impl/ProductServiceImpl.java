@@ -28,11 +28,27 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
 
     @Override
-    public ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size) {
+    public ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
+        if (!name.equals("null")) {
+            Page<Product> products = productRepository
+                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(cId, name, name, pageable);
+            return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
+        }
         Page<Product> products = productRepository.findAllByCategoryId(cId, pageable);
-        Page<ProductDTO> dtoPage = new PageImpl<>(productMapper.toDTOPage(products));
-        return ApiResult.success(dtoPage);
+        return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
+    }
+
+    @Override
+    public ApiResult<Page<ProductDTO>> getAll(int page, int size, String name) {
+        Pageable pageable = PageRequest.of(page, size);
+        if (!name.equals("null")) {
+            Page<Product> products = productRepository
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name, pageable);
+            return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
+        }
+        Page<Product> products = productRepository.findAll(pageable);
+        return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
     }
 
     @Override
@@ -81,6 +97,7 @@ public class ProductServiceImpl implements ProductService {
         }
         return ApiResult.success("DELETED SUCCESSFULLY");
     }
+
 
     private Product toEntity(ProductDTO dto) {
         Category category = categoryRepository.findById(dto.getCategoryId()).orElseThrow(
