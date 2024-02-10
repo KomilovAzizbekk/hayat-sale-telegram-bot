@@ -99,4 +99,5 @@ public interface Message {
     String ONE_THREE_DAY = "one.three.day";
     String NO_COMMENT = "no.comment";
     String LINK_COURIER = "link.courier";
+    String ACTUAL_PRICE = "actual.price";
 }

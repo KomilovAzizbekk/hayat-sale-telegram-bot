@@ -2,6 +2,7 @@ package uz.mediasolutions.saleservicebot.manual;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
+import org.springframework.http.HttpHeaders;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,8 @@ public class ApiResult<T> {
 
     private Long totalElements;
 
+    private HttpHeaders headers;
+
     //RESPONSE FAQAT BITTA BOOLEANDAN IBORAT BO'LSA
     private ApiResult(Boolean success) {
         this.success = success;
@@ -35,10 +38,10 @@ public class ApiResult<T> {
         this.data = data;
     }
 
-    private ApiResult(T data, Boolean success, Long totalElements) {
+    private ApiResult(T data, Boolean success, HttpHeaders headers) {
         this.data = data;
         this.success = success;
-        this.totalElements = totalElements;
+        this.headers= headers;
     }
 
     //SUCCESS RESPONSE WITH MESSAGE
@@ -46,6 +49,7 @@ public class ApiResult<T> {
         this.success = Boolean.TRUE;
         this.message = message;
     }
+
 
     //ERROR RESPONSE WITH MESSAGE AND ERROR CODE
     private ApiResult(String errorMsg, Integer errorCode) {
@@ -60,12 +64,14 @@ public class ApiResult<T> {
         this.errors = errors;
     }
 
+    public static <E> ApiResult<E> success(E data, HttpHeaders headers) {
+        return new ApiResult<>(data, true, headers);
+    }
+
     public static <E> ApiResult<E> success(E data) {
         return new ApiResult<>(true, data);
     }
-    public static <E> ApiResult<E> successPageable(E data, Long totalElements) {
-        return new ApiResult<>(data, true, totalElements);
-    }
+
     public static <E> ApiResult<E> success(E data, boolean notMessage) {
         return new ApiResult<>(true, data);
     }

@@ -1,12 +1,15 @@
 package uz.mediasolutions.saleservicebot.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Location;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -17,12 +20,17 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import uz.mediasolutions.saleservicebot.entity.*;
 import uz.mediasolutions.saleservicebot.enums.StatusName;
+import uz.mediasolutions.saleservicebot.exceptions.RestException;
 import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.repository.*;
+import uz.mediasolutions.saleservicebot.service.abs.FileService;
+import uz.mediasolutions.saleservicebot.service.impl.FileServiceImpl;
 import uz.mediasolutions.saleservicebot.utills.UTF8Control;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
-import java.io.Serializable;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -44,6 +52,8 @@ public class MakeService {
     private final ChosenProductRepository chosenProductRepository;
     private final OrderRepository orderRepository;
     private final StatusRepository statusRepository;
+    private final FileServiceImpl fileService;
+    private final FileRepository fileRepository;
 
     //FOR USER STATE
     private final Map<String, BotState> userStates = new HashMap<>();
@@ -916,6 +926,21 @@ public class MakeService {
         return sendMessage;
     }
 
+    public SendMessage whenChosenCategory2(Update update) {
+        String chatId = getChatId(update);
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        Product product = chosenProducts.get(chosenProducts.size() - 1).getProduct();
+        String category = getCategoryNameByProduct(product, getUserLanguage(chatId));
+        SendMessage sendMessage = new SendMessage(chatId,
+                getMessage(Message.CATEGORY, getUserLanguage(chatId)) + " *" + category + "*\n" +
+                        getMessage(Message.PRODUCTS_FOR_CATEGORY, getUserLanguage(chatId)));
+        sendMessage.setReplyMarkup(forChosenCategory(update, category));
+        sendMessage.enableMarkdown(true);
+        setUserState(chatId, BotState.CHOOSE_PRODUCT);
+        return sendMessage;
+    }
+
     private ReplyKeyboardMarkup forChosenCategory(Update update, String text) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
@@ -1647,5 +1672,37 @@ public class MakeService {
         editMessageText.setChatId(CHANNEL_ID);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         return editMessageText;
+    }
+
+    @SneakyThrows
+    public SendDocument sendFile(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        byte[] data = fileService.getFileData();
+        List<FileEntity> fileEntities = fileRepository.findAll();
+        FileEntity fileEntity = fileEntities.get(fileEntities.size() - 1);
+        Timestamp updatedAt = fileEntity.getUpdatedAt();
+        LocalDateTime localDateTime = updatedAt.toLocalDateTime();
+        String format = localDateTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        String fileName = fileEntity.getFileName();
+        int i = fileName.lastIndexOf('.');
+        String prefix = fileName.substring(0, i);
+        String suffix = fileName.substring(i+1);
+
+        SendDocument sendDocument = new SendDocument();
+        if (data != null) {
+            File tempFile = File.createTempFile(prefix, suffix);
+
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(data);
+            }
+            sendDocument.setChatId(chatId);
+            sendDocument.setDocument(new InputFile(tempFile));
+            sendDocument.setCaption(
+                    String.format(getMessage(Message.ACTUAL_PRICE, language), format));
+            tempFile.deleteOnExit();
+        }
+        return sendDocument;
     }
 }

@@ -68,6 +68,9 @@ public class TgService extends TelegramLongPollingBot {
                     makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
                 execute(makeService.whenSettings1(update));
                 execute(makeService.whenSettings2(update));
+            } else if (text.equals(makeService.getMessage(Message.MENU_PRICE_LIST, makeService.getUserLanguage(chatId))) &&
+                    makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
+                execute(makeService.sendFile(update));
             } else if (makeService.getUserState(chatId).equals(BotState.CHANGE_NAME)) {
                 execute(makeService.whenChangeName2(update));
             } else if (makeService.getUserState(chatId).equals(BotState.CHANGE_PHONE_NUMBER)) {
@@ -93,7 +96,7 @@ public class TgService extends TelegramLongPollingBot {
             } else if (makeService.numbersUpTo().contains(text) &&
                     makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) {
                 execute(makeService.whenAddProductToBasket(update, text));
-                execute(makeService.whenOrder(update));
+                execute(makeService.whenChosenCategory2(update));
             } else if (text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId))) &&
                     makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) {
                 execute(makeService.whenBackInProductCount(update));

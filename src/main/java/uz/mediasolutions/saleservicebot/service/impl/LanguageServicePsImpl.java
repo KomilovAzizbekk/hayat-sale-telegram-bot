@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uz.mediasolutions.saleservicebot.entity.LanguagePs;
 import uz.mediasolutions.saleservicebot.entity.LanguageSourcePs;
-import uz.mediasolutions.saleservicebot.enums.LanguageEnum;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.TranslateDto;
 import uz.mediasolutions.saleservicebot.repository.LanguageRepositoryPs;

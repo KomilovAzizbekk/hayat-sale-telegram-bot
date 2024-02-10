@@ -28,7 +28,7 @@ public interface LanguageController {
 
     @GetMapping(ALL_BY_LANG)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<Map<String, String>> getAllByLang(@RequestParam(defaultValue = "Uz") String lang);
+    ApiResult<Map<String, String>> getAllByLang(@RequestParam(defaultValue = "Uz") String language);
 
     @PostMapping(CREATE_EDIT)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")

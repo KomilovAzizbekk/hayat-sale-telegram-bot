@@ -25,8 +25,8 @@ public class LanguageControllerImpl implements LanguageController {
     }
 
     @Override
-    public ApiResult<Map<String, String>> getAllByLang(String lang) {
-        return languageServicePs.getAllByLanguage(lang);
+    public ApiResult<Map<String, String>> getAllByLang(String language) {
+        return languageServicePs.getAllByLanguage(language);
     }
 
     @Override

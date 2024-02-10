@@ -2,7 +2,6 @@ package uz.mediasolutions.saleservicebot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -10,25 +9,20 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import uz.mediasolutions.saleservicebot.enums.RoleName;
 import uz.mediasolutions.saleservicebot.exceptions.RestException;
-import uz.mediasolutions.saleservicebot.utills.CommonUtils;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 import uz.mediasolutions.saleservicebot.utills.constants.Rest;
 import uz.mediasolutions.saleservicebot.entity.User;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.SignInDTO;
 import uz.mediasolutions.saleservicebot.payload.TokenDTO;
-import uz.mediasolutions.saleservicebot.repository.RoleRepository;
 import uz.mediasolutions.saleservicebot.repository.UserRepository;
 import uz.mediasolutions.saleservicebot.secret.JwtProvider;
 import uz.mediasolutions.saleservicebot.service.abs.AuthService;
 
 import java.sql.Timestamp;
 import java.util.Objects;
-import java.util.Optional;
 
 @Slf4j
 @Service
