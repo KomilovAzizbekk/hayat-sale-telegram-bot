@@ -55,7 +55,7 @@ public class FileServiceImpl implements FileService {
             headers.setContentDispositionFormData("attachment", fileEntity.getFileName());
             return new ResponseEntity<>(fileEntity.getData(), headers, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw RestException.restThrow("FILE NOT FOUND", HttpStatus.BAD_REQUEST);
         }
     }
 
