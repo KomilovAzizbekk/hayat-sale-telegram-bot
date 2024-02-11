@@ -21,21 +21,17 @@ public interface LanguageController {
     String CREATE_MAIN_KEY = "create-with-key";
 
     @GetMapping(ALL)
-    @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
     ApiResult<Page<LanguagePs>> getAllPageable(@RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
                                                @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size,
                                                @RequestParam(defaultValue = "null", required = false) String key);
 
     @GetMapping(ALL_BY_LANG)
-    @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
     ApiResult<Map<String, String>> getAllByLang(@RequestParam(defaultValue = "Uz") String language);
 
     @PostMapping(CREATE_EDIT)
-    @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
     ApiResult<?> createTranslation(@RequestBody TranslateDto dto);
 
     @PostMapping(CREATE_MAIN_KEY)
-    @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
     ApiResult<?> createMainKey(@RequestBody List<TranslateDto> dtos);
 
 }
