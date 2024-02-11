@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRem
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.repository.FileRepository;
+import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class TgService extends TelegramLongPollingBot {
 
     private final MakeService makeService;
     private final FileRepository fileRepository;
+    private final TgUserRepository tgUserRepository;
 
     @Override
     public String getBotUsername() {

@@ -15,7 +15,6 @@ import uz.mediasolutions.saleservicebot.payload.UserDTO;
 import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.service.abs.TgUserService;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +46,7 @@ public class TgUserServiceImpl implements TgUserService {
     public ApiResult<?> block(Long id) {
         TgUser user = tgUserRepository.findById(id).orElseThrow(
                 () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
-        user.setAccepted(false);
+        user.setBlocked(true);
         tgUserRepository.save(user);
         return ApiResult.success("BLOCKED SUCCESSFULLY");
     }
@@ -56,7 +55,7 @@ public class TgUserServiceImpl implements TgUserService {
     public ApiResult<?> unblockUser(Long id) {
         TgUser user = tgUserRepository.findById(id).orElseThrow(
                 () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
-        user.setAccepted(true);
+        user.setBlocked(false);
         tgUserRepository.save(user);
         return ApiResult.success("ACTIVATED SUCCESSFULLY");
     }

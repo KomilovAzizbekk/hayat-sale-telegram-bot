@@ -282,7 +282,8 @@ public class MakeService {
                 tgUserRepository.findByChatId(chatId).getName() != null &&
                 tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
                 tgUserRepository.findByChatId(chatId).getMarket() != null &&
-                tgUserRepository.findByChatId(chatId).isAccepted()) {
+                tgUserRepository.findByChatId(chatId).isAccepted() &&
+                !tgUserRepository.findByChatId(chatId).isBlocked()) {
             return whenMenuForExistedUser(update);
         } else if (tgUserRepository.existsByChatId(chatId) &&
                 tgUserRepository.findByChatId(chatId).getName() != null &&
@@ -290,6 +291,13 @@ public class MakeService {
                 tgUserRepository.findByChatId(chatId).getMarket() != null &&
                 !tgUserRepository.findByChatId(chatId).isAccepted()) {
             return new SendMessage(chatId, getMessage(Message.PLEASE_WAIT, getUserLanguage(chatId)));
+        } else if (tgUserRepository.existsByChatId(chatId) &&
+                tgUserRepository.findByChatId(chatId).getName() != null &&
+                tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
+                tgUserRepository.findByChatId(chatId).getMarket() != null &&
+                tgUserRepository.findByChatId(chatId).isAccepted() &&
+                tgUserRepository.findByChatId(chatId).isBlocked()) {
+            return new SendMessage(chatId, getMessage(Message.YOU_ARE_BLOCKED, getUserLanguage(chatId)));
         } else {
             SendMessage sendMessage = new SendMessage(chatId,
                     getMessage(Message.LANG_SAME_FOR_2_LANG, getUserLanguage(chatId)));
@@ -349,12 +357,14 @@ public class MakeService {
             TgUser tgUser = TgUser.builder().chatId(chatId)
                     .name(name)
                     .isAccepted(false)
+                    .isBlocked(false)
                     .build();
             tgUserRepository.save(tgUser);
         } else {
             TgUser tgUser = tgUserRepository.findByChatId(chatId);
             tgUser.setName(name);
             tgUser.setAccepted(false);
+            tgUser.setBlocked(false);
             tgUserRepository.save(tgUser);
         }
         SendMessage sendMessage = new SendMessage(chatId, getMessage(Message.ENTER_PHONE_NUMBER,

@@ -102,4 +102,5 @@ public interface Message {
     String ACTUAL_PRICE = "actual.price";
     String FILE_NOT_EXISTS = "file.not.exists";
     String CLICK_COURIER = "click.courier";
+    String YOU_ARE_BLOCKED = "you.are.blocked";
 }

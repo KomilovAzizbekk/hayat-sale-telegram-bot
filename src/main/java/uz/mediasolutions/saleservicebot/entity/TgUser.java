@@ -39,6 +39,9 @@ public class TgUser extends AbsLong {
     @Column(name = "is_accepted")
     private boolean isAccepted;
 
+    @Column(name = "is_blocked")
+    private boolean isBlocked;
+
     @ManyToOne(fetch = FetchType.LAZY)
     private Market market;
 

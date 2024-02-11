@@ -21,4 +21,6 @@ public class UserDTO {
 
     private boolean accepted;
 
+    private boolean blocked;
+
 }
