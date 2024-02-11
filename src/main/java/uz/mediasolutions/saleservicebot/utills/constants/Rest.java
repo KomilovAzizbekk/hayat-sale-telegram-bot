@@ -1,6 +1,7 @@
 package uz.mediasolutions.saleservicebot.utills.constants;
 
 import uz.mediasolutions.saleservicebot.controller.abs.AuthController;
+import uz.mediasolutions.saleservicebot.controller.abs.OrderController;
 
 import java.util.HashMap;
 
@@ -16,8 +17,8 @@ public interface Rest {
             "/configuration/security",
             "/swagger-ui.html",
             "/webjars/**",
-            AuthController.AUTH + "**"
-
+            AuthController.AUTH + "**",
+            OrderController.ORDER + "**"
     };
 
     String AUTHORIZATION_HEADER = "Authorization";

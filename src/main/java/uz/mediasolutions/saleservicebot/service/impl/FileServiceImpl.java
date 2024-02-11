@@ -10,6 +10,8 @@ import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.repository.FileRepository;
 import uz.mediasolutions.saleservicebot.service.abs.FileService;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.List;
 
 
@@ -44,22 +46,22 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public ApiResult<byte[]> getFile(Long id) {
+    public ResponseEntity<byte[]> getFile(Long id) {
         FileEntity fileEntity = fileRepository.findById(id).orElseThrow(
-                () -> RestException.restThrow("ID NOT FOUND", HttpStatus.CONFLICT));
+                () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
         if (fileEntity != null) {
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDisposition(ContentDisposition.builder("attachment").filename(fileEntity.getFileName()).build());
-            return ApiResult.success(fileEntity.getData(), headers);
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", fileEntity.getFileName());
+            return new ResponseEntity<>(fileEntity.getData(), headers, HttpStatus.OK);
         } else {
-            throw RestException.restThrow("NOT FOUND", HttpStatus.CONFLICT);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
-    public byte[] getFileData() {
+    public InputStream getFileContentAsStream() {
         List<FileEntity> fileEntities = fileRepository.findAll();
         FileEntity fileEntity = fileEntities.get(fileEntities.size() - 1);
-        return (fileEntity != null) ? fileEntity.getData() : null;
+        return (fileEntity != null) ? new ByteArrayInputStream(fileEntity.getData()) : null;
     }
 }

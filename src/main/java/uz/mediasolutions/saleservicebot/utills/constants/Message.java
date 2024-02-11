@@ -100,4 +100,6 @@ public interface Message {
     String NO_COMMENT = "no.comment";
     String LINK_COURIER = "link.courier";
     String ACTUAL_PRICE = "actual.price";
+    String FILE_NOT_EXISTS = "file.not.exists";
+    String CLICK_COURIER = "click.courier";
 }

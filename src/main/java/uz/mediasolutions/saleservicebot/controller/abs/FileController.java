@@ -1,5 +1,7 @@
 package uz.mediasolutions.saleservicebot.controller.abs;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
@@ -14,9 +16,11 @@ public interface FileController {
 
 
     @GetMapping(GET)
-    ApiResult<byte[]> get(@PathVariable Long id);
+    @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
+    ResponseEntity<byte[]> get(@PathVariable Long id);
 
     @PostMapping(UPLOAD)
+    @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
     ApiResult<?> uploadFile(@RequestParam("file")MultipartFile file);
 
 }

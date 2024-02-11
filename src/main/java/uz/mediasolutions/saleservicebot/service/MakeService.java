@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -30,6 +31,8 @@ import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -116,15 +119,15 @@ public class MakeService {
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < chosenProducts.size(); i++) {
             if (languageCode.equals("Ru")) {
-                text.append(i + 1).append(") *")
+                text.append(i + 1).append(") <b>")
                         .append(chosenProducts.get(i).getProduct().getNameRu())
-                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append("</b> x ").append(chosenProducts.get(i).getCount())
                         .append(" ").append(getMessage(Message.COUNT_X, languageCode))
                         .append("\n\n");
             } else {
-                text.append(i + 1).append(") *")
+                text.append(i + 1).append(") <b>")
                         .append(chosenProducts.get(i).getProduct().getNameUz())
-                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append("</b> x ").append(chosenProducts.get(i).getCount())
                         .append(" ").append(getMessage(Message.COUNT_X, languageCode))
                         .append("\n\n");
             }
@@ -1376,15 +1379,24 @@ public class MakeService {
     public SendMessage whenOfficialOrder(Update update) {
         String chatId = getChatId(update);
         TgUser tgUser = tgUserRepository.findByChatId(chatId);
-        List<ChosenProduct> chosenProducts = basketRepository.findByTgUserChatId(chatId).getChosenProducts();
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        List<Long> ids = new ArrayList<>();
+        for (ChosenProduct chosenProduct : chosenProducts) {
+            ids.add(chosenProduct.getId());
+        }
+        List<ChosenProduct> allById = chosenProductRepository.findAllById(ids);
         Order order = Order.builder().tgUser(tgUser)
-                .chosenProducts(chosenProducts)
+                .chosenProducts(allById)
                 .status(statusRepository.findByName(StatusName.PENDING)).build();
         orderRepository.save(order);
+        basket.setChosenProducts(new ArrayList<>());
+        basketRepository.save(basket);
 
         SendMessage sendMessage = new SendMessage(chatId,
                 getMessage(Message.SEND_LOCATION, getUserLanguage(chatId)));
         sendMessage.setReplyMarkup(forSendLocation(update));
+        setUserState(chatId, BotState.SEND_LOCATION);
         return sendMessage;
     }
 
@@ -1456,7 +1468,7 @@ public class MakeService {
         orderRepository.save(order);
 
         SendMessage sendMessage = new SendMessage(chatId,
-                String.format(getMessage(Message.ORDER_CREATED, getUserLanguage(chatId)), order.getId()));
+                String.format(getMessage(Message.ORDER_CREATED, getUserLanguage(chatId)), order.getNumber()));
         sendMessage.enableMarkdown(true);
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
         return sendMessage;
@@ -1474,7 +1486,7 @@ public class MakeService {
         String comment = order.getComment();
 
         SendMessage sendMessage = new SendMessage(CHANNEL_ID,
-                "*" + getMessage(Message.ORDER, language) + order.getId() + "*\n\n" +
+                "<b>" + getMessage(Message.ORDER, language) + order.getNumber() + "</b>\n\n" +
                         getMessage(Message.NAME, language) + " " + name + "\n" +
                         getMessage(Message.PHONE_NUMBER, language) + " " + phoneNumber + "\n" +
                         getMessage(Message.MARKET, language) + " " + getMarketNameByUser(chatId, language) + "\n\n" +
@@ -1485,7 +1497,7 @@ public class MakeService {
                         getMessage(Message.COMMENT, language) + " " + returnComment(comment, language) + "\n" +
                         getMessage(Message.ORDER_STATUS, language) + " " + getOrderStatusName(chatId));
         sendMessage.setReplyMarkup(forOrderCreated2(update, order.getId()));
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         setUserState(chatId, BotState.ORDER_COMPLETE);
         return sendMessage;
     }
@@ -1494,7 +1506,7 @@ public class MakeService {
         return comment == null ? getMessage(Message.NO_COMMENT, languageCode) : comment;
     }
 
-    private InlineKeyboardMarkup forOrderCreated2(Update update, Long orderId) {
+    private InlineKeyboardMarkup forOrderCreated2(Update update, UUID orderId) {
         String chatId = getChatId(update);
 
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
@@ -1532,7 +1544,7 @@ public class MakeService {
     }
 
     public SendMessage whenAcceptOrder1(Update update) {
-        Long orderId = Long.valueOf(update.getCallbackQuery().getData().substring(3));
+        UUID orderId = UUID.fromString((update.getCallbackQuery().getData().substring(3)));
         Optional<Order> order = orderRepository.findById(orderId);
         SendMessage sendMessage = new SendMessage();
         if (order.isPresent()) {
@@ -1542,7 +1554,7 @@ public class MakeService {
             String chatId = order1.getTgUser().getChatId();
             sendMessage.setChatId(chatId);
             sendMessage.setText(String.format(
-                    getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getId(),
+                    getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getNumber(),
                     getMessage(Message.ONE_THREE_HOUR, getUserLanguage(chatId)).substring(1)));
             sendMessage.enableMarkdown(true);
             sendMessage.setReplyMarkup(forMenu(update));
@@ -1552,7 +1564,7 @@ public class MakeService {
     }
 
     public SendMessage whenAcceptOrder2(Update update) {
-        Long orderId = Long.valueOf(update.getCallbackQuery().getData().substring(3));
+        UUID orderId = UUID.fromString((update.getCallbackQuery().getData().substring(3)));
         Optional<Order> order = orderRepository.findById(orderId);
         SendMessage sendMessage = new SendMessage();
         if (order.isPresent()) {
@@ -1562,7 +1574,7 @@ public class MakeService {
             String chatId = order1.getTgUser().getChatId();
             sendMessage.setChatId(chatId);
             sendMessage.setText(String.format(
-                    getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getId(),
+                    getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getNumber(),
                     getMessage(Message.ONE_DAY, getUserLanguage(chatId)).substring(1)));
             sendMessage.enableMarkdown(true);
             sendMessage.setReplyMarkup(forMenu(update));
@@ -1572,7 +1584,7 @@ public class MakeService {
     }
 
     public SendMessage whenAcceptOrder3(Update update) {
-        Long orderId = Long.valueOf(update.getCallbackQuery().getData().substring(3));
+        UUID orderId = UUID.fromString((update.getCallbackQuery().getData().substring(3)));
         Optional<Order> order = orderRepository.findById(orderId);
         SendMessage sendMessage = new SendMessage();
         if (order.isPresent()) {
@@ -1582,7 +1594,7 @@ public class MakeService {
             String chatId = order1.getTgUser().getChatId();
             sendMessage.setChatId(chatId);
             sendMessage.setText(String.format(
-                    getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getId(),
+                    getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getNumber(),
                     getMessage(Message.ONE_THREE_DAY, getUserLanguage(chatId)).substring(1)));
             sendMessage.enableMarkdown(true);
             sendMessage.setReplyMarkup(forMenu(update));
@@ -1592,7 +1604,7 @@ public class MakeService {
     }
 
     public EditMessageText whenAcceptOrderForChannel(Update update) {
-        Long orderId = Long.valueOf(update.getCallbackQuery().getData().substring(3));
+        UUID orderId = UUID.fromString((update.getCallbackQuery().getData().substring(3)));
         Optional<Order> order1 = orderRepository.findById(orderId);
         EditMessageText editMessageText = new EditMessageText();
         Order order = new Order();
@@ -1605,27 +1617,27 @@ public class MakeService {
         String phoneNumber = order.getTgUser().getPhoneNumber();
         String date = order.getOrderedTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss"));
         String comment = order.getComment();
+        String link = "<a href='https://stackoverflow.com' target='_blank'>" +
+                getMessage(Message.CLICK_COURIER, language) + "</a>";
 
         editMessageText.setText(
-                "*" + getMessage(Message.ORDER, language) + order.getId() + "*\n\n" +
+                "<b>" + getMessage(Message.ORDER, language) + order.getNumber() + "</b>\n\n" +
                         getMessage(Message.NAME, language) + " " + name + "\n" +
                         getMessage(Message.PHONE_NUMBER, language) + " " + phoneNumber + "\n" +
                         getMessage(Message.MARKET, language) + " " + getMarketNameByUser(chatId, language) + "\n\n" +
-                        getMessage(Message.FOR_COURIER, language) + " " + "\n" +
+                        getMessage(Message.FOR_COURIER, language) + " " + link + "\n" +
                         getMessage(Message.DATE, language) + " " + date + "\n\n" +
                         getChosenProductsNameAndCountForOrder(chatId, language) +
                         getMessage(Message.COMMENT, language) + " " + returnComment(comment, language) + "\n" +
                         getMessage(Message.ORDER_STATUS, language) + " " + getOrderStatusName(chatId));
-        editMessageText.enableMarkdown(true);
+        editMessageText.enableHtml(true);
         editMessageText.setChatId(CHANNEL_ID);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        List<ChosenProduct> chosenProducts = order.getChosenProducts();
-        chosenProductRepository.deleteAll(chosenProducts);
         return editMessageText;
     }
 
     public SendMessage whenRejectOrder1(Update update) {
-        Long orderId = Long.valueOf(update.getCallbackQuery().getData().substring(3));
+        UUID orderId = UUID.fromString((update.getCallbackQuery().getData().substring(3)));
         Optional<Order> order = orderRepository.findById(orderId);
         SendMessage sendMessage = new SendMessage();
         if (order.isPresent()) {
@@ -1635,7 +1647,7 @@ public class MakeService {
             String chatId = order1.getTgUser().getChatId();
             sendMessage.setChatId(chatId);
             sendMessage.setText(String.format(
-                    getMessage(Message.ORDER_REJECTED, getUserLanguage(chatId)), order1.getId()));
+                    getMessage(Message.ORDER_REJECTED, getUserLanguage(chatId)), order1.getNumber()));
             sendMessage.enableMarkdown(true);
             sendMessage.setReplyMarkup(forMenu(update));
             setUserState(chatId, BotState.CHOOSE_MENU);
@@ -1644,7 +1656,7 @@ public class MakeService {
     }
 
     public EditMessageText whenRejectOrder2(Update update) {
-        Long orderId = Long.valueOf(update.getCallbackQuery().getData().substring(3));
+        UUID orderId = UUID.fromString((update.getCallbackQuery().getData().substring(3)));
         Optional<Order> order1 = orderRepository.findById(orderId);
         EditMessageText editMessageText = new EditMessageText();
         Order order = new Order();
@@ -1659,7 +1671,7 @@ public class MakeService {
         String comment = order.getComment();
 
         editMessageText.setText(
-                "*" + getMessage(Message.ORDER, language) + order.getId() + "*\n\n" +
+                "<b>" + getMessage(Message.ORDER, language) + order.getNumber() + "</b>\n\n" +
                         getMessage(Message.NAME, language) + " " + name + "\n" +
                         getMessage(Message.PHONE_NUMBER, language) + " " + phoneNumber + "\n" +
                         getMessage(Message.MARKET, language) + " " + getMarketNameByUser(chatId, language) + "\n\n" +
@@ -1668,7 +1680,7 @@ public class MakeService {
                         getChosenProductsNameAndCountForOrder(chatId, language) +
                         getMessage(Message.COMMENT, language) + " " + returnComment(comment, language) + "\n" +
                         getMessage(Message.ORDER_STATUS, language) + " " + getOrderStatusName(chatId));
-        editMessageText.enableMarkdown(true);
+        editMessageText.enableHtml(true);
         editMessageText.setChatId(CHANNEL_ID);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         return editMessageText;
@@ -1679,30 +1691,34 @@ public class MakeService {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
 
-        byte[] data = fileService.getFileData();
+        InputStream inputStream = fileService.getFileContentAsStream();
         List<FileEntity> fileEntities = fileRepository.findAll();
         FileEntity fileEntity = fileEntities.get(fileEntities.size() - 1);
         Timestamp updatedAt = fileEntity.getUpdatedAt();
         LocalDateTime localDateTime = updatedAt.toLocalDateTime();
         String format = localDateTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         String fileName = fileEntity.getFileName();
-        int i = fileName.lastIndexOf('.');
-        String prefix = fileName.substring(0, i);
-        String suffix = fileName.substring(i+1);
 
         SendDocument sendDocument = new SendDocument();
-        if (data != null) {
-            File tempFile = File.createTempFile(prefix, suffix);
-
-            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
-                fos.write(data);
-            }
-            sendDocument.setChatId(chatId);
-            sendDocument.setDocument(new InputFile(tempFile));
-            sendDocument.setCaption(
-                    String.format(getMessage(Message.ACTUAL_PRICE, language), format));
-            tempFile.deleteOnExit();
-        }
+        sendDocument.setChatId(chatId);
+        sendDocument.setDocument(new InputFile(inputStream, fileName));
+        sendDocument.setCaption(
+                String.format(getMessage(Message.ACTUAL_PRICE, language), format));
         return sendDocument;
+    }
+
+    public SendMessage whenFileNotExists(Update update) {
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+
+        return new SendMessage(chatId, getMessage(Message.FILE_NOT_EXISTS, language));
+    }
+
+    public SendMessage whenDelivered(String chatId, Order order) {
+        String language = getUserLanguage(chatId);
+        SendMessage sendMessage = new SendMessage(chatId,
+                String.format(getMessage(Message.ORDER_DELIVERED, language), order.getNumber()));
+        sendMessage.enableMarkdown(true);
+        return sendMessage;
     }
 }

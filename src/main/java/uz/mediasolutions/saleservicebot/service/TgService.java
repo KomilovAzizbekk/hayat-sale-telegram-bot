@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.mediasolutions.saleservicebot.manual.BotState;
+import uz.mediasolutions.saleservicebot.repository.FileRepository;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.List;
 public class TgService extends TelegramLongPollingBot {
 
     private final MakeService makeService;
+    private final FileRepository fileRepository;
 
     @Override
     public String getBotUsername() {
@@ -70,7 +72,10 @@ public class TgService extends TelegramLongPollingBot {
                 execute(makeService.whenSettings2(update));
             } else if (text.equals(makeService.getMessage(Message.MENU_PRICE_LIST, makeService.getUserLanguage(chatId))) &&
                     makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
-                execute(makeService.sendFile(update));
+                if (!fileRepository.findAll().isEmpty())
+                    execute(makeService.sendFile(update));
+                else
+                    execute(makeService.whenFileNotExists(update));
             } else if (makeService.getUserState(chatId).equals(BotState.CHANGE_NAME)) {
                 execute(makeService.whenChangeName2(update));
             } else if (makeService.getUserState(chatId).equals(BotState.CHANGE_PHONE_NUMBER)) {
@@ -79,32 +84,33 @@ public class TgService extends TelegramLongPollingBot {
                 execute(makeService.whenChangeMarket2(update));
             } else if (makeService.getUserState(chatId).equals(BotState.CHANGE_LANGUAGE)) {
                 execute(makeService.whenChangeLanguage2(update));
-            } else if (text.equals(makeService.getMessage(Message.MENU_ORDER, makeService.getUserLanguage(chatId))) &&
-                    makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
+            } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU) &&
+                    text.equals(makeService.getMessage(Message.MENU_ORDER, makeService.getUserLanguage(chatId)))) {
                 execute(makeService.whenOrder(update));
-            } else if (text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId))) &&
-                    makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY)) {
+            } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) &&
+                    text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
                 execute(makeService.whenMenuForExistedUser(update));
-            } else if (makeService.getCategoryName(makeService.getUserLanguage(chatId)).contains(text)) {
+            } else if ((makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY)) &&
+                    makeService.getCategoryName(makeService.getUserLanguage(chatId)).contains(text)) {
                 execute(makeService.whenChosenCategory(update, text));
-            } else if (text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId))) &&
-                    makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT)) {
+            } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) &&
+                    text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
                 execute(makeService.whenOrder(update));
-            } else if (makeService.getProductName(makeService.getUserLanguage(chatId)).contains(text) &&
-                    makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT)) {
+            } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) &&
+                    makeService.getProductName(makeService.getUserLanguage(chatId)).contains(text)) {
                 execute(makeService.whenChosenProduct(update, text));
-            } else if (makeService.numbersUpTo().contains(text) &&
-                    makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) {
+            } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
+                    makeService.numbersUpTo().contains(text)) {
                 execute(makeService.whenAddProductToBasket(update, text));
                 execute(makeService.whenChosenCategory2(update));
-            } else if (text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId))) &&
-                    makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) {
+            } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
+                    text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
                 execute(makeService.whenBackInProductCount(update));
-            } else if (text.substring(0, 6).equals(makeService.getMessage(Message.BASKET,
-                    makeService.getUserLanguage(chatId)).substring(0, 6)) &&
-                    (makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) ||
-                     makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) ||
-                     makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT))) {
+            } else if ((makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) ||
+                    makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) ||
+                    makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) &&
+                    text.substring(0, 6).equals(makeService.getMessage(Message.BASKET,
+                            makeService.getUserLanguage(chatId)).substring(0, 6))) {
                 deleteMessage(update);
                 execute(makeService.whenBasket(update));
             } else if (makeService.getUserState(chatId).equals(BotState.WRITE_COMMENT)) {
@@ -170,9 +176,11 @@ public class TgService extends TelegramLongPollingBot {
                 execute(makeService.whenRejectOrder2(update));
             }
         } else if (update.hasMessage() && update.getMessage().hasLocation()) {
-            execute(makeService.whenComment(update));
+            String chatId = update.getMessage().getChatId().toString();
+            if (makeService.getUserState(chatId).equals(BotState.SEND_LOCATION)) {
+                execute(makeService.whenComment(update));
+            }
         }
-
     }
 
     public void deleteMessage(Update update) throws TelegramApiException {
