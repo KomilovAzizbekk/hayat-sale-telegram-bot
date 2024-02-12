@@ -29,14 +29,14 @@ public class TgUserServiceImpl implements TgUserService {
     public ApiResult<Page<UserDTO>> getAll(int page, int size, String search) {
         Pageable pageable = PageRequest.of(page, size);
         if (!search.equals("null")) {
-            List<TgUser> users = tgUserRepository
-                    .findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(search, search);
-            List<UserDTO> dtoList = userMapper.toDTOList(users);
-            return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
+            Page<TgUser> users = tgUserRepository
+                    .findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(pageable, search, search);
+            Page<UserDTO> map = users.map(userMapper::toDTO);
+            return ApiResult.success(map);
         }
-        List<TgUser> users = tgUserRepository.findAll();
-        List<UserDTO> dtoList = userMapper.toDTOList(users);
-        return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
+        Page<TgUser> users = tgUserRepository.findAll(pageable);
+        Page<UserDTO> map = users.map(userMapper::toDTO);
+        return ApiResult.success(map);
     }
 
     @Override

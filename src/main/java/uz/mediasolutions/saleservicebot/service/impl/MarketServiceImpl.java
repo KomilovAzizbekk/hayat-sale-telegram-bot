@@ -28,14 +28,14 @@ public class MarketServiceImpl implements MarketService {
     public ApiResult<Page<MarketDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
-            List<Market> markets = marketRepository
-                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name);
-            List<MarketDTO> dtoList = marketMapper.toDTOList(markets);
-            return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
+            Page<Market> markets = marketRepository
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(pageable, name, name);
+            Page<MarketDTO> map = markets.map(marketMapper::toDTO);
+            return ApiResult.success(map);
         }
-        List<Market> markets = marketRepository.findAll();
-        List<MarketDTO> dtoList = marketMapper.toDTOList(markets);
-        return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
+        Page<Market> markets = marketRepository.findAll(pageable);
+        Page<MarketDTO> map = markets.map(marketMapper::toDTO);
+        return ApiResult.success(map);
     }
 
     @Override

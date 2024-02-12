@@ -16,6 +16,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
     boolean existsByNumber(Integer number);
 
-    List<Category> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(String nameUz, String nameRu);
+    Page<Category> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(Pageable pageable, String nameUz, String nameRu);
 
 }

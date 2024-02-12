@@ -1,7 +1,7 @@
 package uz.mediasolutions.saleservicebot.mapper;
 
 import org.mapstruct.Mapper;
-import org.springframework.data.domain.Page;
+import org.mapstruct.factory.Mappers;
 import uz.mediasolutions.saleservicebot.entity.Category;
 import uz.mediasolutions.saleservicebot.payload.CategoryDTO;
 
@@ -9,6 +9,8 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
+
+    CategoryMapper INSTANCE = Mappers.getMapper(CategoryMapper.class);
 
     List<CategoryDTO> toDTOList(List<Category> categories);
 
