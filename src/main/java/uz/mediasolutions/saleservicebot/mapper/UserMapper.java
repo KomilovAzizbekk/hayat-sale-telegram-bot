@@ -12,6 +12,6 @@ public interface UserMapper {
 
     UserDTO toDTO(TgUser user);
 
-    List<UserDTO> toDTOList(Page<TgUser> users);
+    List<UserDTO> toDTOList(List<TgUser> users);
 
 }

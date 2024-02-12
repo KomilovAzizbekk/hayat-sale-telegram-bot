@@ -15,6 +15,8 @@ import uz.mediasolutions.saleservicebot.payload.UserDTO;
 import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.service.abs.TgUserService;
 
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -27,12 +29,14 @@ public class TgUserServiceImpl implements TgUserService {
     public ApiResult<Page<UserDTO>> getAll(int page, int size, String search) {
         Pageable pageable = PageRequest.of(page, size);
         if (!search.equals("null")) {
-            Page<TgUser> users = tgUserRepository
-                    .findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(pageable, search, search);
-            return ApiResult.success(new PageImpl<>(userMapper.toDTOList(users)));
+            List<TgUser> users = tgUserRepository
+                    .findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(search, search);
+            List<UserDTO> dtoList = userMapper.toDTOList(users);
+            return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
         }
-        Page<TgUser> users = tgUserRepository.findAll(pageable);
-        return ApiResult.success(new PageImpl<>(userMapper.toDTOList(users)));
+        List<TgUser> users = tgUserRepository.findAll();
+        List<UserDTO> dtoList = userMapper.toDTOList(users);
+        return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
     }
 
     @Override

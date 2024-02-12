@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import uz.mediasolutions.saleservicebot.entity.TgUser;
 
+import java.util.List;
+
 public interface TgUserRepository extends JpaRepository<TgUser, Long> {
 
     TgUser findByChatId(String chatId);
@@ -13,6 +15,6 @@ public interface TgUserRepository extends JpaRepository<TgUser, Long> {
 
     boolean existsAllByPhoneNumber(String phoneNumber);
 
-    Page<TgUser> findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(Pageable pageable, String name, String phoneNumber);
+    List<TgUser> findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(String name, String phoneNumber);
 
 }
