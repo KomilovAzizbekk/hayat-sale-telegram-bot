@@ -41,7 +41,7 @@ public class FileServiceImpl implements FileService {
             }
             return ApiResult.success("SAVED SUCCESSFULLY");
         } else {
-            throw RestException.restThrow("FILE FORMAT SHOULD BE pdf, word, xlsx", HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow("FILE FORMAT SHOULD BE pdf, word, excel", HttpStatus.BAD_REQUEST);
         }
     }
 

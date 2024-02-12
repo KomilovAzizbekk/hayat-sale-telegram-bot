@@ -15,6 +15,8 @@ import uz.mediasolutions.saleservicebot.payload.MarketDTO;
 import uz.mediasolutions.saleservicebot.repository.MarketRepository;
 import uz.mediasolutions.saleservicebot.service.abs.MarketService;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class MarketServiceImpl implements MarketService {
@@ -26,12 +28,14 @@ public class MarketServiceImpl implements MarketService {
     public ApiResult<Page<MarketDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
-            Page<Market> markets = marketRepository
-                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name, pageable);
-            return ApiResult.success(new PageImpl<>(marketMapper.toDTOPage(markets)));
+            List<Market> markets = marketRepository
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name);
+            List<MarketDTO> dtoList = marketMapper.toDTOList(markets);
+            return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
         }
-        Page<Market> markets = marketRepository.findAll(pageable);
-        return ApiResult.success(new PageImpl<>(marketMapper.toDTOPage(markets)));
+        List<Market> markets = marketRepository.findAll();
+        List<MarketDTO> dtoList = marketMapper.toDTOList(markets);
+        return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
     }
 
     @Override

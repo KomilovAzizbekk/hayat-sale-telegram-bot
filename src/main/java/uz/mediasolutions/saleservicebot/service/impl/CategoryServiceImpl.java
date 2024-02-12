@@ -15,6 +15,7 @@ import uz.mediasolutions.saleservicebot.payload.CategoryDTO;
 import uz.mediasolutions.saleservicebot.repository.CategoryRepository;
 import uz.mediasolutions.saleservicebot.service.abs.CategoryService;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -29,12 +30,14 @@ public class CategoryServiceImpl implements CategoryService {
     public ApiResult<Page<CategoryDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
-            Page<Category> categories = categoryRepository.
-                    findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name, pageable);
-            return ApiResult.success(new PageImpl<>(categoryMapper.toDTOPage(categories)));
+            List<Category> categories = categoryRepository.
+                    findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name);
+            List<CategoryDTO> dtoList = categoryMapper.toDTOList(categories);
+            return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
         }
-        Page<Category> categories = categoryRepository.findAll(pageable);
-        return ApiResult.success(new PageImpl<>(categoryMapper.toDTOPage(categories)));
+        List<Category> categories = categoryRepository.findAll();
+        List<CategoryDTO> dtoList = categoryMapper.toDTOList(categories);
+        return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
     }
 
     @Override

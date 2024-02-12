@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface MarketMapper {
 
-    List<MarketDTO> toDTOPage(Page<Market> markets);
+    List<MarketDTO> toDTOList(List<Market> markets);
 
     MarketDTO toDTO(Market market);
 

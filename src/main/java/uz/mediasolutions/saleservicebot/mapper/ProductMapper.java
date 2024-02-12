@@ -12,7 +12,7 @@ import java.util.List;
 public interface ProductMapper {
 
     @Mapping(source = "category.id", target = "categoryId")
-    List<ProductDTO> toDTOPage(Page<Product> products);
+    List<ProductDTO> toDTOList(List<Product> products);
 
     @Mapping(source = "category.id", target = "categoryId")
     ProductDTO toDTO(Product product);

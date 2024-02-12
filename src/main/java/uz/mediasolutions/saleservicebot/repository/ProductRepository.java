@@ -12,7 +12,7 @@ import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
-    Page<Product> findAllByCategoryId(UUID cId, Pageable pageable);
+    List<Product> findAllByCategoryId(UUID cId);
 
     List<Product> findAllByCategoryId(UUID cId, Sort sort);
 
@@ -22,8 +22,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsByNumberAndCategoryId(Integer number, UUID categoryId);
 
-    Page<Product> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(String nameUz, String nameRu, Pageable pageable);
+    List<Product> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(String nameUz, String nameRu);
 
-    Page<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(UUID cId, String nameUz, String nameRu, Pageable pageable);
+    List<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(UUID cId, String nameUz, String nameRu);
 
 }

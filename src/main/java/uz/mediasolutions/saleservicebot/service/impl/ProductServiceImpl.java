@@ -17,6 +17,7 @@ import uz.mediasolutions.saleservicebot.repository.CategoryRepository;
 import uz.mediasolutions.saleservicebot.repository.ProductRepository;
 import uz.mediasolutions.saleservicebot.service.abs.ProductService;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -31,24 +32,28 @@ public class ProductServiceImpl implements ProductService {
     public ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
-            Page<Product> products = productRepository
-                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(cId, name, name, pageable);
-            return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
+            List<Product> products = productRepository
+                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(cId, name, name);
+            List<ProductDTO> dtoList = productMapper.toDTOList(products);
+            return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
         }
-        Page<Product> products = productRepository.findAllByCategoryId(cId, pageable);
-        return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
+        List<Product> products = productRepository.findAllByCategoryId(cId);
+        List<ProductDTO> dtoList = productMapper.toDTOList(products);
+        return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
     }
 
     @Override
     public ApiResult<Page<ProductDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
-            Page<Product> products = productRepository
-                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name, pageable);
-            return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
+            List<Product> products = productRepository
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(name, name);
+            List<ProductDTO> dtoList = productMapper.toDTOList(products);
+            return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
         }
-        Page<Product> products = productRepository.findAll(pageable);
-        return ApiResult.success(new PageImpl<>(productMapper.toDTOPage(products)));
+        List<Product> products = productRepository.findAll();
+        List<ProductDTO> dtoList = productMapper.toDTOList(products);
+        return ApiResult.success(new PageImpl<>(dtoList, pageable, dtoList.size()));
     }
 
     @Override

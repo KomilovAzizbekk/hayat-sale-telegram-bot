@@ -266,7 +266,7 @@ public class MakeService {
         return matcher.matches();
     }
 
-    public static String getChatId(Update update) {
+    public String getChatId(Update update) {
         if (update.hasMessage()) {
             return update.getMessage().getChatId().toString();
         } else if (update.hasCallbackQuery()) {

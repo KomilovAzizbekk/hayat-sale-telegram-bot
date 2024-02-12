@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import uz.mediasolutions.saleservicebot.entity.Category;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
@@ -15,6 +16,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
     boolean existsByNumber(Integer number);
 
-    Page<Category> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(String nameUz, String nameRu, Pageable pageable);
+    List<Category> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(String nameUz, String nameRu);
 
 }
