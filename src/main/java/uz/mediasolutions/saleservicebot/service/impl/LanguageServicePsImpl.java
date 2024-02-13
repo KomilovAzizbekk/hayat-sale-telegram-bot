@@ -39,6 +39,7 @@ public class LanguageServicePsImpl implements LanguageServicePs {
         if (!languageRepository.existsByKey(newWord)) {
             LanguagePs languagePs = LanguagePs.builder()
                     .key(newWord)
+                    .primaryLang(primaryLang)
                     .build();
             languageRepository.save(languagePs);
             return ApiResult.success("CREATED SUCCESSFULLY");
