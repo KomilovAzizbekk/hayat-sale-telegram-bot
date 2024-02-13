@@ -8,6 +8,7 @@ import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.TranslateDto;
 import uz.mediasolutions.saleservicebot.utills.constants.Rest;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ public interface LanguageController {
     String ALL_BY_LANG = "by-lang";
     String CREATE_EDIT = "create-edit";
     String CREATE_MAIN_KEY = "create-with-key";
+    String CREATE_KEY = "create-key";
 
     @GetMapping(ALL)
     ApiResult<Page<LanguagePs>> getAllPageable(@RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
@@ -33,5 +35,8 @@ public interface LanguageController {
 
     @PostMapping(CREATE_MAIN_KEY)
     ApiResult<?> createMainKey(@RequestBody List<TranslateDto> dtos);
+
+    @PostMapping(CREATE_KEY)
+    ApiResult<?> createKey(@RequestBody HashMap<String, String> dto);
 
 }

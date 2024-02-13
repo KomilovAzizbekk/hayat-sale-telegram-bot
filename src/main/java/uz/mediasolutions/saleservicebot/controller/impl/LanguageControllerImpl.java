@@ -38,4 +38,9 @@ public class LanguageControllerImpl implements LanguageController {
     public ApiResult<?> createMainKey(List<TranslateDto> dtos) {
         return languageServicePs.createMainText(dtos);
     }
+
+    @Override
+    public ApiResult<?> createKey(HashMap<String, String> dto) {
+        return languageServicePs.createKey(dto);
+    }
 }

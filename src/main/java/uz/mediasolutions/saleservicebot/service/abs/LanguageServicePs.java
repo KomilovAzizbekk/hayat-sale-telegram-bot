@@ -19,4 +19,5 @@ public interface LanguageServicePs {
 
     ApiResult<?> createMainText(List<TranslateDto> dtos);
 
+    ApiResult<?> createKey(HashMap<String, String> dto);
 }

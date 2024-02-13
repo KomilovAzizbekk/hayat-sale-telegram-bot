@@ -5,9 +5,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.mediasolutions.saleservicebot.entity.LanguagePs;
 import uz.mediasolutions.saleservicebot.entity.LanguageSourcePs;
+import uz.mediasolutions.saleservicebot.exceptions.RestException;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.TranslateDto;
 import uz.mediasolutions.saleservicebot.repository.LanguageRepositoryPs;
@@ -26,6 +28,24 @@ public class LanguageServicePsImpl implements LanguageServicePs {
 
     @Value("${languages.primaryLang}")
     String primaryLang;
+
+
+    @Override
+    public ApiResult<?> createKey(HashMap<String, String> dto) {
+        String newWord = "";
+        for (Map.Entry<String, String> entry : dto.entrySet()) {
+            newWord = entry.getValue();
+        }
+        if (!languageRepository.existsByKey(newWord)) {
+            LanguagePs languagePs = LanguagePs.builder()
+                    .key(newWord)
+                    .build();
+            languageRepository.save(languagePs);
+            return ApiResult.success("CREATED SUCCESSFULLY");
+        } else
+            throw RestException.restThrow("KEY ALREADY EXISTS", HttpStatus.BAD_REQUEST);
+    }
+
 
     @Override
     public ApiResult<?> createMainText(List<TranslateDto> dtos) {
@@ -49,13 +69,12 @@ public class LanguageServicePsImpl implements LanguageServicePs {
                 languageSourceRepositoryPs.saveAll(List.of(uz, ru));
             }
         }
-
         return ApiResult.success("CREATED SUCCESSFULLY");
     }
 
     @Override
     public ApiResult<?> createTranslation(TranslateDto dto) {
-        Optional<LanguagePs> byId = languageRepository.findById(dto.getId());
+        Optional<LanguagePs> byId = languageRepository.findByIdAndKey(dto.getId(), dto.getKey());
         if (byId.isPresent()) {
             LanguagePs languagePs = byId.get();
             List<LanguageSourcePs> allByIdId = languageSourceRepositoryPs.findAllByLanguagePs_Id(languagePs.getId());
@@ -66,24 +85,27 @@ public class LanguageServicePsImpl implements LanguageServicePs {
                         uz.setTranslation(dto.getTextUz() != null ? dto.getTextUz() : uz.getTranslation());
                         uz.setLanguage("Uz");
                         languageSourceRepositoryPs.save(uz);
-                    } else {
-                        languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Uz", dto.getTextUz()));
                     }
+
                     if (allByIdId.get(i).getLanguage().equals("Ru")) {
                         LanguageSourcePs ru = allByIdId.get(i);
                         ru.setTranslation(dto.getTextRu() != null ? dto.getTextRu() : ru.getTranslation());
                         ru.setLanguage("Ru");
                         languageSourceRepositoryPs.save(ru);
-                    } else {
-                        languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Ru", dto.getTextRu()));
                     }
+                    if (!languageSourceRepositoryPs.existsByLanguageAndLanguagePsId("Uz", languagePs.getId()))
+                        languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Uz", dto.getTextUz()));
+
+                    if (!languageSourceRepositoryPs.existsByLanguageAndLanguagePsId("Ru", languagePs.getId()))
+                        languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Ru", dto.getTextRu()));
                 }
             } else {
                 languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Uz", dto.getTextUz()));
                 languageSourceRepositoryPs.save(new LanguageSourcePs(languagePs, "Ru", dto.getTextRu()));
             }
-        }
-        return ApiResult.success("SAVED SUCCESSFULLY");
+            return ApiResult.success("SAVED SUCCESSFULLY");
+        } else
+            throw RestException.restThrow("ID NOT FOUND OR INCORRECT KEY FOR ID", HttpStatus.BAD_REQUEST);
     }
 
     @Override
