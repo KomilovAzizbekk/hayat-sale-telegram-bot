@@ -291,13 +291,6 @@ public class MakeService {
                 tgUserRepository.findByChatId(chatId).getMarket() != null &&
                 !tgUserRepository.findByChatId(chatId).isAccepted()) {
             return new SendMessage(chatId, getMessage(Message.PLEASE_WAIT, getUserLanguage(chatId)));
-        } else if (tgUserRepository.existsByChatId(chatId) &&
-                tgUserRepository.findByChatId(chatId).getName() != null &&
-                tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
-                tgUserRepository.findByChatId(chatId).getMarket() != null &&
-                tgUserRepository.findByChatId(chatId).isAccepted() &&
-                tgUserRepository.findByChatId(chatId).isBlocked()) {
-            return new SendMessage(chatId, getMessage(Message.YOU_ARE_BLOCKED, getUserLanguage(chatId)));
         } else {
             SendMessage sendMessage = new SendMessage(chatId,
                     getMessage(Message.LANG_SAME_FOR_2_LANG, getUserLanguage(chatId)));
