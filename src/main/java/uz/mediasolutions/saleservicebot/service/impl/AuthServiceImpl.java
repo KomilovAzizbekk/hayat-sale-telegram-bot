@@ -79,7 +79,7 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
         } catch (ExpiredJwtException | BadCredentialsException e) {
             throw RestException.restThrow(Message.TOKEN_EXPIRED_OR_BAD_CREDENTIALS, HttpStatus.UNAUTHORIZED);
         } catch (AuthenticationException e) {
-            throw RestException.restThrow(Message.BAD_REQUEST, HttpStatus.UNAUTHORIZED);
+            throw RestException.restThrow(Message.BAD_REQUEST, HttpStatus.BAD_REQUEST);
         }
     }
 
