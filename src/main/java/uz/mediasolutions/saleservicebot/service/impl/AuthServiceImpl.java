@@ -69,16 +69,17 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
     @Override
     public User checkUsernameAndPasswordAndEtcAndSetAuthenticationOrThrow(String username, String password) {
         try {
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             return (User) authentication.getPrincipal();
-        } catch (DisabledException | LockedException | CredentialsExpiredException | BadCredentialsException |
+        } catch (DisabledException | LockedException | CredentialsExpiredException |
                  UsernameNotFoundException disabledException) {
             throw RestException.restThrow(Message.USER_NOT_FOUND_OR_DISABLED, HttpStatus.BAD_REQUEST);
-        } catch (ExpiredJwtException expiredJwtException) {
-            throw RestException.restThrow(Message.TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
+        } catch (ExpiredJwtException | BadCredentialsException e) {
+            throw RestException.restThrow(Message.TOKEN_EXPIRED_OR_BAD_CREDENTIALS, HttpStatus.UNAUTHORIZED);
         } catch (AuthenticationException e) {
-            throw RestException.restThrow(Message.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+            throw RestException.restThrow(Message.BAD_REQUEST, HttpStatus.UNAUTHORIZED);
         }
     }
 
