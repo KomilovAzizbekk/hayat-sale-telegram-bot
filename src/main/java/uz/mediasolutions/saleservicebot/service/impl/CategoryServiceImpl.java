@@ -62,7 +62,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public ApiResult<?> edit(UUID id, CategoryDTO categoryDTO) {
-        if (categoryRepository.existsByNumber(categoryDTO.getNumber()))
+        if (categoryRepository.existsByNumber(categoryDTO.getNumber()) &&
+                !categoryRepository.existsByNumberAndId(categoryDTO.getNumber(), id))
             throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
         else {
             Category category = categoryRepository.findById(id).orElseThrow(

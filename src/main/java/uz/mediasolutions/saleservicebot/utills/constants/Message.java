@@ -1,5 +1,9 @@
 package uz.mediasolutions.saleservicebot.utills.constants;
 
+import uz.mediasolutions.saleservicebot.manual.ErrorData;
+
+import java.util.List;
+
 public interface Message {
 
     String NOT_FOUND = "not.found";
@@ -14,6 +18,8 @@ public interface Message {
     String MISMATCH_PASSWORDS = "mismatch.passwords";
     String USER_ALREADY_REGISTERED = "user.already.registered";
     String USER_NOT_FOUND_OR_DISABLED = "user.not.found.or.disabled";
+    String TOKEN_EXPIRED = "token.expired";
+    String BAD_REQUEST = "bad.request";
     String ERROR = "error";
     String CANNOT_BLOCK = "cannot.block";
     String CANNOT_EDIT = "cannot.edit";
@@ -103,4 +109,5 @@ public interface Message {
     String FILE_NOT_EXISTS = "file.not.exists";
     String CLICK_COURIER = "click.courier";
     String YOU_ARE_BLOCKED = "you.are.blocked";
+
 }

@@ -76,19 +76,21 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ApiResult<?> edit(UUID id, ProductDTO dto) {
-        if (productRepository.existsByNumberAndCategoryId(dto.getNumber(), dto.getCategoryId()))
+        if (productRepository.existsByNumberAndCategoryId(dto.getNumber(), dto.getCategoryId()) &&
+                !productRepository.existsByNumberAndCategoryIdAndId(dto.getNumber(), dto.getCategoryId(), id))
             throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
         else {
             Product product = productRepository.findById(id).orElseThrow(
                     () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
 
-            Category category = categoryRepository.findById(id).orElseThrow(
+            Category category = categoryRepository.findById(dto.getCategoryId()).orElseThrow(
                     () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
 
             product.setNameUz(dto.getNameUz());
             product.setNameRu(dto.getNameRu());
             product.setNumber(dto.getNumber());
             product.setCategory(category);
+            productRepository.save(product);
             return ApiResult.success("EDITED SUCCESSFULLY");
         }
     }

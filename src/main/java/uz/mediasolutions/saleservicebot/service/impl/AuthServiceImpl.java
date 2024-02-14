@@ -1,10 +1,12 @@
 package uz.mediasolutions.saleservicebot.service.impl;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -72,9 +74,14 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
             return (User) authentication.getPrincipal();
         } catch (DisabledException | LockedException | CredentialsExpiredException | BadCredentialsException |
                  UsernameNotFoundException disabledException) {
-            throw RestException.restThrow(Message.USER_NOT_FOUND_OR_DISABLED, HttpStatus.UNAUTHORIZED);
+            throw RestException.restThrow(Message.USER_NOT_FOUND_OR_DISABLED, HttpStatus.BAD_REQUEST);
+        } catch (ExpiredJwtException expiredJwtException) {
+            throw RestException.restThrow(Message.TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
+        } catch (AuthenticationException e) {
+            throw RestException.restThrow(Message.BAD_REQUEST, HttpStatus.BAD_REQUEST);
         }
     }
+
 
     private void usernameNotFoundThrow(String username){
         if (!userRepository.existsByUsername(username)) {

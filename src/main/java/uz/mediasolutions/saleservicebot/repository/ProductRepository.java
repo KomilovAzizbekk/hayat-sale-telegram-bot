@@ -22,6 +22,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsByNumberAndCategoryId(Integer number, UUID categoryId);
 
+    boolean existsByNumberAndCategoryIdAndId(Integer number, UUID categoryId, UUID id);
+
     Page<Product> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(Pageable pageable, String nameUz, String nameRu);
 
     Page<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(Pageable pageable, UUID cId, String nameUz, String nameRu);
