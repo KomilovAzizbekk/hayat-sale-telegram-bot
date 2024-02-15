@@ -2,7 +2,6 @@ package uz.mediasolutions.saleservicebot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -14,8 +13,6 @@ import uz.mediasolutions.saleservicebot.mapper.UserMapper;
 import uz.mediasolutions.saleservicebot.payload.UserDTO;
 import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.service.abs.TgUserService;
-
-import java.util.List;
 
 
 @Service
@@ -30,11 +27,11 @@ public class TgUserServiceImpl implements TgUserService {
         Pageable pageable = PageRequest.of(page, size);
         if (!search.equals("null")) {
             Page<TgUser> users = tgUserRepository
-                    .findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(pageable, search, search);
+                    .findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCaseOrderByCreatedAtDesc(pageable, search, search);
             Page<UserDTO> map = users.map(userMapper::toDTO);
             return ApiResult.success(map);
         }
-        Page<TgUser> users = tgUserRepository.findAll(pageable);
+        Page<TgUser> users = tgUserRepository.findAllByOrderByCreatedAtDesc(pageable);
         Page<UserDTO> map = users.map(userMapper::toDTO);
         return ApiResult.success(map);
     }

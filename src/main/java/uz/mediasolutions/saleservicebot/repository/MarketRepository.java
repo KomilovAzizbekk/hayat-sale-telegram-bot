@@ -13,6 +13,7 @@ public interface MarketRepository extends JpaRepository<Market, Long> {
 
     Market findByNameRu(String nameRu);
 
-    Page<Market> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(Pageable pageable, String nameUz, String nameRu);
+    Page<Market> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(Pageable pageable, String nameUz, String nameRu);
 
+    Page<Market> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }

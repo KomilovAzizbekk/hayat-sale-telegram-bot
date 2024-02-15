@@ -2,12 +2,10 @@ package uz.mediasolutions.saleservicebot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import springfox.documentation.swagger2.mappers.ModelMapperImpl;
 import uz.mediasolutions.saleservicebot.entity.Category;
 import uz.mediasolutions.saleservicebot.exceptions.RestException;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
@@ -27,18 +25,16 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryMapper categoryMapper;
 
-    private final ModelMapperImpl modelMapper;
-
     @Override
     public ApiResult<Page<CategoryDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Category> categories = categoryRepository.
-                    findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(pageable, name, name);
+                    findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, name, name);
             Page<CategoryDTO> map = categories.map(categoryMapper::toDTO);
             return ApiResult.success(map);
         }
-        Page<Category> categories = categoryRepository.findAll(pageable);
+        Page<Category> categories = categoryRepository.findAllByOrderByCreatedAtDesc(pageable);
         Page<CategoryDTO> map = categories.map(categoryMapper::toDTO);
         return ApiResult.success(map);
     }

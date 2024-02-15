@@ -15,6 +15,8 @@ public interface TgUserRepository extends JpaRepository<TgUser, Long> {
 
     boolean existsAllByPhoneNumber(String phoneNumber);
 
-    Page<TgUser> findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCase(Pageable pageable, String name, String phoneNumber);
+    Page<TgUser> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<TgUser> findAllByNameContainsIgnoreCaseOrPhoneNumberContainsIgnoreCaseOrderByCreatedAtDesc(Pageable pageable, String name, String phoneNumber);
 
 }

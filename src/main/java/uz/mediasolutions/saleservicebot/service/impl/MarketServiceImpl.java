@@ -2,7 +2,6 @@ package uz.mediasolutions.saleservicebot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -14,8 +13,6 @@ import uz.mediasolutions.saleservicebot.mapper.MarketMapper;
 import uz.mediasolutions.saleservicebot.payload.MarketDTO;
 import uz.mediasolutions.saleservicebot.repository.MarketRepository;
 import uz.mediasolutions.saleservicebot.service.abs.MarketService;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,11 +26,11 @@ public class MarketServiceImpl implements MarketService {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Market> markets = marketRepository
-                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(pageable, name, name);
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, name, name);
             Page<MarketDTO> map = markets.map(marketMapper::toDTO);
             return ApiResult.success(map);
         }
-        Page<Market> markets = marketRepository.findAll(pageable);
+        Page<Market> markets = marketRepository.findAllByOrderByCreatedAtDesc(pageable);
         Page<MarketDTO> map = markets.map(marketMapper::toDTO);
         return ApiResult.success(map);
     }

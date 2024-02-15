@@ -2,7 +2,6 @@ package uz.mediasolutions.saleservicebot.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -17,7 +16,6 @@ import uz.mediasolutions.saleservicebot.repository.CategoryRepository;
 import uz.mediasolutions.saleservicebot.repository.ProductRepository;
 import uz.mediasolutions.saleservicebot.service.abs.ProductService;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -33,11 +31,11 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
-                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(pageable, cId, name, name);
+                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, cId, name, name);
             Page<ProductDTO> map = products.map(productMapper::toDTO);
             return ApiResult.success(map);
         }
-        Page<Product> products = productRepository.findAllByCategoryId(pageable, cId);
+        Page<Product> products = productRepository.findAllByCategoryIdOrderByCreatedAtDesc(pageable, cId);
         Page<ProductDTO> map = products.map(productMapper::toDTO);
         return ApiResult.success(map);
     }
@@ -47,11 +45,11 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
-                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCase(pageable, name, name);
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, name, name);
             Page<ProductDTO> map = products.map(productMapper::toDTO);
             return ApiResult.success(map);
         }
-        Page<Product> products = productRepository.findAll(pageable);
+        Page<Product> products = productRepository.findAllByOrderByCreatedAtDesc(pageable);
         Page<ProductDTO> map = products.map(productMapper::toDTO);
         return ApiResult.success(map);
     }
