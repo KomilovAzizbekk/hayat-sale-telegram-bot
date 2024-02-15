@@ -95,15 +95,15 @@ public class MakeService {
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < chosenProducts.size(); i++) {
             if (languageCode.equals("Ru")) {
-                text.append(i + 1).append(") *")
+                text.append(i + 1).append(") <b>")
                         .append(chosenProducts.get(i).getProduct().getNameRu())
-                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append("</b> x ").append(chosenProducts.get(i).getCount())
                         .append(" ").append(getMessage(Message.COUNT_X, languageCode))
                         .append("\n\n");
             } else {
-                text.append(i + 1).append(") *")
+                text.append(i + 1).append(") <b>")
                         .append(chosenProducts.get(i).getProduct().getNameUz())
-                        .append("* x ").append(chosenProducts.get(i).getCount())
+                        .append("</b> x ").append(chosenProducts.get(i).getCount())
                         .append(" ").append(getMessage(Message.COUNT_X, languageCode))
                         .append("\n\n");
             }
@@ -216,6 +216,7 @@ public class MakeService {
     private static final String BUNDLE_BASE_NAME = "messages";
     private static final String UZ = "Uz";
     private static final String RU = "Ru";
+    private static Long num = 0L;
 
 //    public String getMessage(String key, String language) {
 //        List<LanguagePs> allByLanguage = languageRepository.findAll();
@@ -283,13 +284,15 @@ public class MakeService {
                 tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
                 tgUserRepository.findByChatId(chatId).getMarket() != null &&
                 tgUserRepository.findByChatId(chatId).isAccepted() &&
-                !tgUserRepository.findByChatId(chatId).isBlocked()) {
+                !tgUserRepository.findByChatId(chatId).isBlocked() &&
+                !tgUserRepository.findByChatId(chatId).isRejected()) {
             return whenMenuForExistedUser(update);
         } else if (tgUserRepository.existsByChatId(chatId) &&
                 tgUserRepository.findByChatId(chatId).getName() != null &&
                 tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
                 tgUserRepository.findByChatId(chatId).getMarket() != null &&
-                !tgUserRepository.findByChatId(chatId).isAccepted()) {
+                !tgUserRepository.findByChatId(chatId).isAccepted() &&
+                !tgUserRepository.findByChatId(chatId).isRejected()) {
             return new SendMessage(chatId, getMessage(Message.PLEASE_WAIT, getUserLanguage(chatId)));
         } else {
             SendMessage sendMessage = new SendMessage(chatId,
@@ -464,26 +467,27 @@ public class MakeService {
         tgUserRepository.save(tgUser);
 
         setUserState(chatId, BotState.IN_REVIEW);
-        SendMessage sendMessage = new SendMessage(chatId, getMessage(Message.IN_REVIEW_MESSAGE, getUserLanguage(chatId)) +
-                "\n\n" + getMessage(Message.IN_REVIEW_MESSAGE_2, getUserLanguage(chatId)));
+        SendMessage sendMessage = new SendMessage(chatId, getMessage(Message.IN_REVIEW_MESSAGE, getUserLanguage(chatId)));
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
         return sendMessage;
     }
 
     public SendMessage whenSendAppToChannel(Update update) {
         String chatId = getChatId(update);
+        num++;
 
         Market market = getMarketByNameFromRepo(update.getMessage().getText(), getUserLanguage(chatId));
         TgUser tgUser = tgUserRepository.findByChatId(chatId);
         tgUser.setMarket(market);
         tgUserRepository.save(tgUser);
         SendMessage sendMessage = new SendMessage(CHANNEL_ID,
-                "*" + getMessage(Message.APPLICATION, getUserLanguage(chatId)) + tgUser.getId() + "*\n\n" +
-                        getMessage(Message.NAME, getUserLanguage(chatId)) + " " + tgUser.getName() + "\n" +
-                        getMessage(Message.PHONE_NUMBER, getUserLanguage(chatId)) + " " + tgUser.getPhoneNumber() + "\n" +
-                        getMessage(Message.MARKET, getUserLanguage(chatId)) + " " + getMarketNameByUser(chatId, getUserLanguage(chatId)));
+                String.format(getMessage(Message.APPLICATION, getUserLanguage(chatId)),
+                        num,
+                        tgUser.getName(),
+                        tgUser.getPhoneNumber(),
+                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
         sendMessage.setReplyMarkup(forSendAppToChannel(update));
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         setUserState(chatId, BotState.IN_REVIEW);
         return sendMessage;
     }
@@ -519,17 +523,19 @@ public class MakeService {
         String chatId = update.getCallbackQuery().getData().substring(6);
         TgUser tgUser = tgUserRepository.findByChatId(chatId);
         tgUser.setAccepted(true);
+        tgUser.setRejected(false);
         tgUserRepository.save(tgUser);
 
         EditMessageText editMessageText = new EditMessageText();
         editMessageText.setChatId(CHANNEL_ID);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        editMessageText.setText("*" + getMessage(Message.APPLICATION, getUserLanguage(chatId)) + tgUser.getId() + "*\n\n" +
-                getMessage(Message.NAME, getUserLanguage(chatId)) + " " + tgUser.getName() + "\n" +
-                getMessage(Message.PHONE_NUMBER, getUserLanguage(chatId)) + " " + tgUser.getPhoneNumber() + "\n" +
-                getMessage(Message.MARKET, getUserLanguage(chatId)) + " " + getMarketNameByUser(chatId, getUserLanguage(chatId)) + "\n" +
-                getMessage(Message.ACCEPTED, getUserLanguage(chatId)));
-        editMessageText.enableMarkdown(true);
+        editMessageText.setText(
+                String.format(getMessage(Message.ACCEPTED_APPLICATION, getUserLanguage(chatId)),
+                        num,
+                        tgUser.getName(),
+                        tgUser.getPhoneNumber(),
+                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
+        editMessageText.enableHtml(true);
         return editMessageText;
     }
 
@@ -546,19 +552,20 @@ public class MakeService {
         EditMessageText editMessageText = new EditMessageText();
         editMessageText.setChatId(CHANNEL_ID);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        editMessageText.setText("*" + getMessage(Message.APPLICATION, getUserLanguage(chatId)) + tgUser.getId() + "*\n\n" +
-                getMessage(Message.NAME, getUserLanguage(chatId)) + " " + tgUser.getName() + "\n" +
-                getMessage(Message.PHONE_NUMBER, getUserLanguage(chatId)) + " " + tgUser.getPhoneNumber() + "\n" +
-                getMessage(Message.MARKET, getUserLanguage(chatId)) + " " + getMarketNameByUser(chatId, getUserLanguage(chatId)) + "\n" +
-                getMessage(Message.REJECTED, getUserLanguage(chatId)));
-        editMessageText.enableMarkdown(true);
+        editMessageText.setText(
+                String.format(getMessage(Message.REJECTED_APPLICATION, getUserLanguage(chatId)),
+                        num,
+                        tgUser.getName(),
+                        tgUser.getPhoneNumber(),
+                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
+        editMessageText.enableHtml(true);
         return editMessageText;
     }
 
     public SendMessage whenRejectSendMessageToUser(Update update) {
         String chatId = update.getCallbackQuery().getData().substring(6);
         TgUser tgUser = tgUserRepository.findByChatId(chatId);
-        tgUser.setName(null);
+        tgUser.setRejected(true);
         tgUserRepository.save(tgUser);
         return new SendMessage(chatId, getMessage(Message.REJECTED_USER_MSG, getUserLanguage(chatId)));
     }
@@ -636,12 +643,13 @@ public class MakeService {
         SuggestionsComplaints complaints = suggestsComplaintsRepo.save(suggestionsComplaints);
 
         SendMessage sendMessage = new SendMessage(CHANNEL_ID,
-                "*" + getMessage(Message.SUGGEST_COMPLAINT, getUserLanguage(chatId)) + complaints.getId() + "*\n\n" +
-                        getMessage(Message.NAME, getUserLanguage(chatId)) + " " + tgUser.getName() + "\n" +
-                        getMessage(Message.PHONE_NUMBER, getUserLanguage(chatId)) + " " + tgUser.getPhoneNumber() + "\n" +
-                        getMessage(Message.MARKET, getUserLanguage(chatId)) + " " + getMarketNameByUser(chatId, getUserLanguage(chatId)) + "\n\n" +
-                        getMessage(Message.GIVEN_COMMENT, getUserLanguage(chatId)) + " " + complaints.getText());
-        sendMessage.enableMarkdown(true);
+                String.format(getMessage(Message.SUGGEST_COMPLAINT, getUserLanguage(chatId)),
+                        complaints.getId(),
+                        tgUser.getName(),
+                        tgUser.getPhoneNumber(),
+                        getMarketNameByUser(chatId, getUserLanguage(chatId)),
+                        complaints.getText()));
+        sendMessage.enableHtml(true);
         return sendMessage;
     }
 
@@ -667,17 +675,13 @@ public class MakeService {
         String chatId = getChatId(update);
         TgUser tgUser = tgUserRepository.findByChatId(chatId);
 
-        String userMarket = null;
-        if (getUserLanguage(chatId).equals("Ru"))
-            userMarket = tgUser.getMarket().getNameRu();
-        else
-            userMarket = tgUser.getMarket().getNameUz();
-
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
-        sendMessage.setText(getMessage(Message.NAME, getUserLanguage(chatId)) + " " + tgUser.getName() + "\n" +
-                getMessage(Message.PHONE_NUMBER, getUserLanguage(chatId)) + " " + tgUser.getPhoneNumber() + "\n" +
-                getMessage(Message.MARKET, getUserLanguage(chatId)) + " " + userMarket);
+        sendMessage.setText(
+                String.format(getMessage(Message.USER_INFO, getUserLanguage(chatId)),
+                        tgUser.getName(),
+                        tgUser.getPhoneNumber(),
+                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
         sendMessage.setReplyMarkup(forSettings(update));
         return sendMessage;
     }
@@ -924,10 +928,10 @@ public class MakeService {
     public SendMessage whenChosenCategory(Update update, String text) {
         String chatId = getChatId(update);
         SendMessage sendMessage = new SendMessage(chatId,
-                getMessage(Message.CATEGORY, getUserLanguage(chatId)) + " *" + text + "*\n" +
-                        getMessage(Message.PRODUCTS_FOR_CATEGORY, getUserLanguage(chatId)));
+                String.format(getMessage(Message.CATEGORY, getUserLanguage(chatId)),
+                        text));
         sendMessage.setReplyMarkup(forChosenCategory(update, text));
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         setUserState(chatId, BotState.CHOOSE_PRODUCT);
         return sendMessage;
     }
@@ -939,10 +943,10 @@ public class MakeService {
         Product product = chosenProducts.get(chosenProducts.size() - 1).getProduct();
         String category = getCategoryNameByProduct(product, getUserLanguage(chatId));
         SendMessage sendMessage = new SendMessage(chatId,
-                getMessage(Message.CATEGORY, getUserLanguage(chatId)) + " *" + category + "*\n" +
-                        getMessage(Message.PRODUCTS_FOR_CATEGORY, getUserLanguage(chatId)));
+                String.format(getMessage(Message.CATEGORY, getUserLanguage(chatId)),
+                        category));
         sendMessage.setReplyMarkup(forChosenCategory(update, category));
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         setUserState(chatId, BotState.CHOOSE_PRODUCT);
         return sendMessage;
     }
@@ -1039,11 +1043,11 @@ public class MakeService {
         basketRepository.save(basket);
 
         SendMessage sendMessage = new SendMessage(chatId,
-                getMessage(Message.CATEGORY, language) + " *" + category + "*\n" +
-                        getMessage(Message.PRODUCT, language) + " *" + text + "*\n" +
-                        getMessage(Message.PRODUCT_COUNT, language));
+                String.format(getMessage(Message.CHOSEN_PRODUCT, language),
+                        category,
+                        text));
         sendMessage.setReplyMarkup(forChosenProduct(update));
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         setUserState(chatId, BotState.PRODUCT_COUNT);
         return sendMessage;
     }
@@ -1119,12 +1123,10 @@ public class MakeService {
         chosenProductRepository.save(chosenProduct);
 
         SendMessage sendMessage = new SendMessage(chatId,
-                getMessage(Message.PRODUCT, language) + " *" +
-                        getProductNameByProduct(chosenProduct.getProduct(), language) + "*\n" +
-                        getMessage(Message.COUNT, language) + " *" + text + "*\n" +
-                        getMessage(Message.PRODUCT_ADDED_TO_BASKET, language));
-        sendMessage.enableMarkdown(true);
-        setUserState(chatId, BotState.BASKET);
+                String.format(getMessage(Message.ALL_INFO_CHOSEN_PRODUCT, language),
+                        getProductNameByProduct(chosenProduct.getProduct(), language),
+                        text));
+        sendMessage.enableHtml(true);
         return sendMessage;
     }
 
@@ -1168,10 +1170,10 @@ public class MakeService {
         SendMessage sendMessage;
         if (!basket.getChosenProducts().isEmpty()) {
             sendMessage = new SendMessage(chatId,
-                    getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
-                            getChosenProductsNameAndCount(chatId, language));
+                    String.format(getMessage(Message.PRODUCTS_IN_BASKET, language),
+                            getChosenProductsNameAndCount(chatId, language)));
             sendMessage.setReplyMarkup(forWhenBasketInline(update));
-            sendMessage.enableMarkdown(true);
+            sendMessage.enableHtml(true);
         } else {
             sendMessage = new SendMessage(chatId,
                     getMessage(Message.EMPTY_BASKET, getUserLanguage(chatId)));
@@ -1296,12 +1298,13 @@ public class MakeService {
 
         EditMessageText editMessageText = new EditMessageText();
         editMessageText.setChatId(chatId);
-        editMessageText.enableMarkdown(true);
+        editMessageText.enableHtml(true);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         if (!basket.getChosenProducts().isEmpty()) {
             editMessageText.setReplyMarkup(forWhenBasketInline(update));
-            editMessageText.setText(getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
-                    getChosenProductsNameAndCount(chatId, language));
+            editMessageText.setText(
+                    String.format(getMessage(Message.PRODUCTS_IN_BASKET, language),
+                            getChosenProductsNameAndCount(chatId, language)));
         } else {
             editMessageText.setText(getMessage(Message.BASKET_CLEARED, language));
             editMessageText.setReplyMarkup(forWhenBasketBack(update));
@@ -1329,12 +1332,13 @@ public class MakeService {
 
         EditMessageText editMessageText = new EditMessageText();
         editMessageText.setChatId(chatId);
-        editMessageText.enableMarkdown(true);
+        editMessageText.enableHtml(true);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         if (!basket.getChosenProducts().isEmpty()) {
             editMessageText.setReplyMarkup(forWhenBasketInline(update));
-            editMessageText.setText(getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
-                    getChosenProductsNameAndCount(chatId, language));
+            editMessageText.setText(
+                    String.format(getMessage(Message.PRODUCTS_IN_BASKET, language),
+                            getChosenProductsNameAndCount(chatId, language)));
         } else {
             editMessageText.setText(getMessage(Message.BASKET_CLEARED, language));
             editMessageText.setReplyMarkup(forWhenBasketBack(update));
@@ -1360,9 +1364,10 @@ public class MakeService {
         editMessageText.setChatId(chatId);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         editMessageText.setReplyMarkup(forWhenBasketInline(update));
-        editMessageText.enableMarkdown(true);
-        editMessageText.setText(getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
-                getChosenProductsNameAndCount(chatId, language));
+        editMessageText.enableHtml(true);
+        editMessageText.setText(
+                String.format(getMessage(Message.PRODUCTS_IN_BASKET, language),
+                        getChosenProductsNameAndCount(chatId, language)));
         return editMessageText;
     }
 
@@ -1373,9 +1378,10 @@ public class MakeService {
         EditMessageText editMessageText = new EditMessageText();
         editMessageText.setChatId(chatId);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        editMessageText.setText(getMessage(Message.PRODUCTS_IN_BASKET, language) + "\n\n" +
-                getChosenProductsNameAndCount(chatId, language));
-        editMessageText.enableMarkdown(true);
+        editMessageText.setText(
+                String.format(getMessage(Message.PRODUCTS_IN_BASKET, language),
+                        getChosenProductsNameAndCount(chatId, language)));
+        editMessageText.enableHtml(true);
         return editMessageText;
     }
 
@@ -1472,7 +1478,7 @@ public class MakeService {
 
         SendMessage sendMessage = new SendMessage(chatId,
                 String.format(getMessage(Message.ORDER_CREATED, getUserLanguage(chatId)), order.getNumber()));
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
         return sendMessage;
     }
@@ -1489,16 +1495,16 @@ public class MakeService {
         String comment = order.getComment();
 
         SendMessage sendMessage = new SendMessage(CHANNEL_ID,
-                "<b>" + getMessage(Message.ORDER, language) + order.getNumber() + "</b>\n\n" +
-                        getMessage(Message.NAME, language) + " " + name + "\n" +
-                        getMessage(Message.PHONE_NUMBER, language) + " " + phoneNumber + "\n" +
-                        getMessage(Message.MARKET, language) + " " + getMarketNameByUser(chatId, language) + "\n\n" +
-                        getMessage(Message.FOR_COURIER, language) + " " +
-                        getMessage(Message.LINK_COURIER, language) + "\n" +
-                        getMessage(Message.DATE, language) + " " + date + "\n\n" +
-                        getChosenProductsNameAndCountForOrder(chatId, language) +
-                        getMessage(Message.COMMENT, language) + " " + returnComment(comment, language) + "\n" +
-                        getMessage(Message.ORDER_STATUS, language) + " " + getOrderStatusName(chatId));
+                String.format(getMessage(Message.ORDER, language),
+                        order.getNumber(),
+                        name,
+                        phoneNumber,
+                        getMarketNameByUser(chatId, language),
+                        getMessage(Message.LINK_COURIER, language),
+                        date,
+                        getChosenProductsNameAndCountForOrder(chatId, language),
+                        returnComment(comment, language),
+                        getOrderStatusName(chatId)));
         sendMessage.setReplyMarkup(forOrderCreated2(update, order.getId()));
         sendMessage.enableHtml(true);
         setUserState(chatId, BotState.ORDER_COMPLETE);
@@ -1559,7 +1565,7 @@ public class MakeService {
             sendMessage.setText(String.format(
                     getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getNumber(),
                     getMessage(Message.ONE_THREE_HOUR, getUserLanguage(chatId)).substring(1)));
-            sendMessage.enableMarkdown(true);
+            sendMessage.enableHtml(true);
             sendMessage.setReplyMarkup(forMenu(update));
             setUserState(chatId, BotState.CHOOSE_MENU);
         }
@@ -1579,7 +1585,7 @@ public class MakeService {
             sendMessage.setText(String.format(
                     getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getNumber(),
                     getMessage(Message.ONE_DAY, getUserLanguage(chatId)).substring(1)));
-            sendMessage.enableMarkdown(true);
+            sendMessage.enableHtml(true);
             sendMessage.setReplyMarkup(forMenu(update));
             setUserState(chatId, BotState.CHOOSE_MENU);
         }
@@ -1599,7 +1605,7 @@ public class MakeService {
             sendMessage.setText(String.format(
                     getMessage(Message.ORDER_ACCEPTED, getUserLanguage(chatId)), order1.getNumber(),
                     getMessage(Message.ONE_THREE_DAY, getUserLanguage(chatId)).substring(1)));
-            sendMessage.enableMarkdown(true);
+            sendMessage.enableHtml(true);
             sendMessage.setReplyMarkup(forMenu(update));
             setUserState(chatId, BotState.CHOOSE_MENU);
         }
@@ -1623,16 +1629,16 @@ public class MakeService {
         String link = "<a href='https://stackoverflow.com' target='_blank'>" +
                 getMessage(Message.CLICK_COURIER, language) + "</a>";
 
-        editMessageText.setText(
-                "<b>" + getMessage(Message.ORDER, language) + order.getNumber() + "</b>\n\n" +
-                        getMessage(Message.NAME, language) + " " + name + "\n" +
-                        getMessage(Message.PHONE_NUMBER, language) + " " + phoneNumber + "\n" +
-                        getMessage(Message.MARKET, language) + " " + getMarketNameByUser(chatId, language) + "\n\n" +
-                        getMessage(Message.FOR_COURIER, language) + " " + link + "\n" +
-                        getMessage(Message.DATE, language) + " " + date + "\n\n" +
-                        getChosenProductsNameAndCountForOrder(chatId, language) +
-                        getMessage(Message.COMMENT, language) + " " + returnComment(comment, language) + "\n" +
-                        getMessage(Message.ORDER_STATUS, language) + " " + getOrderStatusName(chatId));
+        editMessageText.setText(String.format(getMessage(Message.ORDER, language),
+                order.getNumber(),
+                name,
+                phoneNumber,
+                getMarketNameByUser(chatId, language),
+                link,
+                date,
+                getChosenProductsNameAndCountForOrder(chatId, language),
+                returnComment(comment, language),
+                getOrderStatusName(chatId)));
         editMessageText.enableHtml(true);
         editMessageText.setChatId(CHANNEL_ID);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
@@ -1651,7 +1657,7 @@ public class MakeService {
             sendMessage.setChatId(chatId);
             sendMessage.setText(String.format(
                     getMessage(Message.ORDER_REJECTED, getUserLanguage(chatId)), order1.getNumber()));
-            sendMessage.enableMarkdown(true);
+            sendMessage.enableHtml(true);
             sendMessage.setReplyMarkup(forMenu(update));
             setUserState(chatId, BotState.CHOOSE_MENU);
         }
@@ -1674,15 +1680,17 @@ public class MakeService {
         String comment = order.getComment();
 
         editMessageText.setText(
-                "<b>" + getMessage(Message.ORDER, language) + order.getNumber() + "</b>\n\n" +
-                        getMessage(Message.NAME, language) + " " + name + "\n" +
-                        getMessage(Message.PHONE_NUMBER, language) + " " + phoneNumber + "\n" +
-                        getMessage(Message.MARKET, language) + " " + getMarketNameByUser(chatId, language) + "\n\n" +
-                        getMessage(Message.FOR_COURIER, language) + " " + "\n" +
-                        getMessage(Message.DATE, language) + " " + date + "\n\n" +
-                        getChosenProductsNameAndCountForOrder(chatId, language) +
-                        getMessage(Message.COMMENT, language) + " " + returnComment(comment, language) + "\n" +
-                        getMessage(Message.ORDER_STATUS, language) + " " + getOrderStatusName(chatId));
+                String.format(getMessage(Message.ORDER, language),
+                        order.getNumber(),
+                        name,
+                        phoneNumber,
+                        getMarketNameByUser(chatId, language),
+                        " ",
+                        date,
+                        getChosenProductsNameAndCountForOrder(chatId, language),
+                        returnComment(comment, language),
+                        getOrderStatusName(chatId))
+        );
         editMessageText.enableHtml(true);
         editMessageText.setChatId(CHANNEL_ID);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
@@ -1721,7 +1729,7 @@ public class MakeService {
         String language = getUserLanguage(chatId);
         SendMessage sendMessage = new SendMessage(chatId,
                 String.format(getMessage(Message.ORDER_DELIVERED, language), order.getNumber()));
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         return sendMessage;
     }
 }

@@ -76,8 +76,6 @@ public class AuthServiceImpl implements AuthService, UserDetailsService {
         } catch (DisabledException | LockedException | CredentialsExpiredException | BadCredentialsException |
                  UsernameNotFoundException disabledException) {
             throw RestException.restThrow(Message.USER_NOT_FOUND_OR_DISABLED, HttpStatus.BAD_REQUEST);
-        } catch (ExpiredJwtException e) {
-            throw RestException.restThrow(Message.TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED);
         } catch (AuthenticationException e) {
             throw RestException.restThrow(Message.BAD_REQUEST, HttpStatus.BAD_REQUEST);
         }

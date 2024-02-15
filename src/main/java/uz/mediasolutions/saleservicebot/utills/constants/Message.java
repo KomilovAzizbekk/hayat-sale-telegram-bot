@@ -1,31 +1,13 @@
 package uz.mediasolutions.saleservicebot.utills.constants;
 
-import uz.mediasolutions.saleservicebot.manual.ErrorData;
-
-import java.util.List;
-
 public interface Message {
-
-    String NOT_FOUND = "not.found";
-    String BLOCKED_SUCCESSFULLY = "blocked";
-    String ACTIVATED_SUCCESSFULLY = "activated";
-    String UPDATED_SUCCESSFULLY = "updated";
-    String DELETED_SUCCESSFULLY = "deleted";
-    String DELETE_FAILED = "delete.failed";
-    String ADDED_SUCCESSFULLY = "added";
-    String INCORRECT_FILE_TYPE = "incorrect.file.type";
     String USERNAME_NOT_FOUND = "username.not.found";
     String MISMATCH_PASSWORDS = "mismatch.passwords";
     String USER_ALREADY_REGISTERED = "user.already.registered";
     String USER_NOT_FOUND_OR_DISABLED = "user.not.found.or.disabled";
-    String TOKEN_EXPIRED = "token.expired";
     String BAD_REQUEST = "bad.request";
-    String ERROR = "error";
-    String CANNOT_BLOCK = "cannot.block";
-    String CANNOT_EDIT = "cannot.edit";
-    String FORBIDDEN_EXCEPTION = "forbidden.exception";
-    String PATH_NOT_FOUND_EXCEPTION = "path.not.found";
-    String SERVER_ERROR = "server.error";
+
+
     String LANG_SAME_FOR_2_LANG = "lang.same.for.2.lang";
     String UZBEK = "uzbek";
     String RUSSIAN = "russian";
@@ -34,7 +16,6 @@ public interface Message {
     String SHARE_PHONE_NUMBER = "share.phone.number";
     String CHOOSE_MARKET = "choose.market";
     String IN_REVIEW_MESSAGE = "in.review.message";
-    String IN_REVIEW_MESSAGE_2 = "in.review.message2";
     String INCORRECT_PHONE_FORMAT = "incorrect.phone.format";
     String ACCEPTED_USER_MSG = "accepted.user.msg";
     String REJECTED_USER_MSG = "rejected.user.msg";
@@ -49,33 +30,21 @@ public interface Message {
     String SETTINGS = "settings";
     String APPLICATION = "application";
     String SUGGEST_COMPLAINT = "suggest.complaint";
-    String NAME = "name";
-    String PHONE_NUMBER = "phone.number";
-    String MARKET = "market";
-    String GIVEN_COMMENT = "given.comment";
     String CHANGE_NAME = "change.name";
     String CHANGE_PHONE_NUMBER = "change.phone.number";
     String CHANGE_MARKET = "change.market";
     String CHANGE_LANGUAGE = "change.language";
     String NAME_CHANGED = "name.changed";
     String PHONE_NUMBER_CHANGED = "phone.number.changed";
-    String PHONE_NUMBER_EXISTED = "phone.number.existed";
     String PLEASE_WAIT = "please.wait";
     String MARKET_CHANGED = "market.changed";
     String LANGUAGE_CHANGED = "language.changed";
-    String ACCEPTED = "accepted";
-    String REJECTED = "rejected";
     String ACCEPT = "accept";
     String REJECT = "reject";
     String CHOOSE_CATEGORY = "choose.category";
     String BACK = "back";
     String BASKET = "basket";
     String CATEGORY = "category";
-    String PRODUCTS_FOR_CATEGORY = "products.for.category";
-    String PRODUCT = "product";
-    String PRODUCT_COUNT = "product.count";
-    String COUNT = "count";
-    String PRODUCT_ADDED_TO_BASKET = "product.added.to.basket";
     String BACK_TO_MENU = "back.to.menu";
     String OFFICIAL_ORDER = "official.order";
     String CLEAR_BASKET = "clear.basket";
@@ -92,10 +61,6 @@ public interface Message {
     String ORDER_REJECTED = "order.rejected";
     String ORDER_DELIVERED = "order.delivered";
     String ORDER = "order";
-    String FOR_COURIER = "for.courier";
-    String DATE = "date";
-    String COMMENT = "comment";
-    String ORDER_STATUS = "order.status";
     String PENDING_ORDER = "pending.order";
     String ACCEPTED_ORDER = "accepted.order";
     String REJECTED_ORDER = "rejected.order";
@@ -109,4 +74,9 @@ public interface Message {
     String FILE_NOT_EXISTS = "file.not.exists";
     String CLICK_COURIER = "click.courier";
     String YOU_ARE_BLOCKED = "you.are.blocked";
+    String ACCEPTED_APPLICATION = "accepted.application";
+    String REJECTED_APPLICATION = "rejected.application";
+    String USER_INFO = "user.info";
+    String CHOSEN_PRODUCT = "chosen.product";
+    String ALL_INFO_CHOSEN_PRODUCT = "all.info.chosen.product";
 }
