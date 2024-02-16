@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.mediasolutions.saleservicebot.controller.abs.ProductController;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.ProductDTO;
+import uz.mediasolutions.saleservicebot.payload.ProductResDTO;
 import uz.mediasolutions.saleservicebot.service.abs.ProductService;
 
 import java.util.UUID;
@@ -17,17 +18,17 @@ public class ProductControllerImpl implements ProductController {
     private final ProductService productService;
 
     @Override
-    public ApiResult<Page<ProductDTO>> getAll(int page, int size, String name) {
+    public ApiResult<Page<ProductResDTO>> getAll(int page, int size, String name) {
         return productService.getAll(page, size, name);
     }
 
     @Override
-    public ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size, String name) {
+    public ApiResult<Page<ProductResDTO>> getAllByCategory(UUID cId, int page, int size, String name) {
         return productService.getAllByCategory(cId, page, size, name);
     }
 
     @Override
-    public ApiResult<ProductDTO> getById(UUID id) {
+    public ApiResult<ProductResDTO> getById(UUID id) {
         return productService.getById(id);
     }
 

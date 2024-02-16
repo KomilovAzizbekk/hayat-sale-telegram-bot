@@ -87,6 +87,9 @@ public class TgService extends TelegramLongPollingBot {
                         execute(makeService.sendFile(update));
                     else
                         execute(makeService.whenFileNotExists(update));
+                } else if (text.equals(makeService.getMessage(Message.MENU_ABOUT_US, makeService.getUserLanguage(chatId))) &&
+                        makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
+                    execute(makeService.whenAboutUs(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.CHANGE_NAME)) {
                     execute(makeService.whenChangeName2(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.CHANGE_PHONE_NUMBER)) {

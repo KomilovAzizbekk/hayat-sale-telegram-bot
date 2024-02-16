@@ -79,4 +79,5 @@ public interface Message {
     String USER_INFO = "user.info";
     String CHOSEN_PRODUCT = "chosen.product";
     String ALL_INFO_CHOSEN_PRODUCT = "all.info.chosen.product";
+    String ABOUT_US = "about.us";
 }

@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import uz.mediasolutions.saleservicebot.entity.Product;
 import uz.mediasolutions.saleservicebot.payload.ProductDTO;
+import uz.mediasolutions.saleservicebot.payload.ProductResDTO;
 
 import java.util.List;
 
@@ -18,5 +19,7 @@ public interface ProductMapper {
 
     @Mapping(source = "category.id", target = "categoryId")
     ProductDTO toDTO(Product product);
+
+    ProductResDTO toResDTO(Product product);
 
 }

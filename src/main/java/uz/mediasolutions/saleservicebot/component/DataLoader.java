@@ -15,7 +15,10 @@ import uz.mediasolutions.saleservicebot.enums.StatusName;
 import uz.mediasolutions.saleservicebot.repository.*;
 import uz.mediasolutions.saleservicebot.service.TgService;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Properties;
 
 @Component
 @RequiredArgsConstructor
@@ -44,11 +47,11 @@ public class DataLoader implements CommandLineRunner {
         }
 
         if (mode.equals("always")) {
-            addMarket();
-            addLangValues();
             addRole();
             addAdmin();
             addStatus();
+            addUzLangValues();
+            addRuLangValues();
         }
 
     }
@@ -81,67 +84,49 @@ public class DataLoader implements CommandLineRunner {
         userRepository.save(admin);
     }
 
-    public void addMarket() {
-        Market кўйликБозори = Market.builder()
-                .nameUz("Кўйлик бозори")
-                .build();
+//    public void addMarket() {
+//        Market кўйликБозори = Market.builder()
+//                .nameUz("Кўйлик бозори")
+//                .build();
+//
+//        Market жомъеБозори = Market.builder()
+//                .nameUz("Жомъе бозори")
+//                .build();
+//
+//        Market паркентскийБозори = Market.builder()
+//                .nameUz("Паркентский бозори")
+//                .build();
+//        marketRepository.saveAll(List.of(кўйликБозори, жомъеБозори, паркентскийБозори));
+//    }
 
-        Market жомъеБозори = Market.builder()
-                .nameUz("Жомъе бозори")
-                .build();
-
-        Market паркентскийБозори = Market.builder()
-                .nameUz("Паркентский бозори")
-                .build();
-        marketRepository.saveAll(List.of(кўйликБозори, жомъеБозори, паркентскийБозори));
+    public void addUzLangValues() throws IOException {
+        Properties properties = new Properties();
+        try (InputStream input = DataLoader.class.getClassLoader()
+                .getResourceAsStream("messages_uz.properties")) {
+            properties.load(input);
+        }
+        for (String key : properties.stringPropertyNames()) {
+            String value = properties.getProperty(key);
+            LanguagePs ps = LanguagePs.builder().primaryLang("Uz").key(key).build();
+            LanguagePs save = languageRepositoryPs.save(ps);
+            LanguageSourcePs sourcePs = LanguageSourcePs.builder()
+                    .languagePs(save).language("Uz").translation(value).build();
+            languageSourceRepositoryPs.save(sourcePs);
+        }
     }
 
-    public void addLangValues() {
-        LanguagePs chooseLang = LanguagePs.builder().key("lang.same.for.2.lang").primaryLang("Uz").build();
-        LanguageSourcePs chooseLangUz = LanguageSourcePs.builder().languagePs(chooseLang)
-                .language("Uz")
-                .translation("Хизмат тилини танланг/Выберите язык обслуживания")
-                .build();
-
-        LanguagePs uzbek = LanguagePs.builder().key("uzbek").primaryLang("Uz").build();
-        LanguageSourcePs uzbekUz = LanguageSourcePs.builder().languagePs(uzbek)
-                .language("Uz")
-                .translation("\uD83C\uDDFA\uD83C\uDDFF Узбекча")
-                .build();
-
-        LanguagePs russian = LanguagePs.builder().key("russian").primaryLang("Uz").build();
-        LanguageSourcePs russianUz = LanguageSourcePs.builder().languagePs(russian)
-                .language("Uz")
-                .translation("\uD83C\uDDF7\uD83C\uDDFA Русский")
-                .build();
-
-        LanguagePs enterName = LanguagePs.builder().key("enter.name").primaryLang("Uz").build();
-        LanguageSourcePs enterNameUz = LanguageSourcePs.builder().languagePs(enterName)
-                .language("Uz")
-                .translation("Исмингизни киритинг:")
-                .build();
-
-        LanguagePs enterPhoneNumber = LanguagePs.builder().key("enter.phone.number").primaryLang("Uz").build();
-        LanguageSourcePs enterPhoneNumberUz = LanguageSourcePs.builder().languagePs(enterPhoneNumber)
-                .language("Uz")
-                .translation("Телефон рақамингизни +998XXYYYYYYY кўринишида бизга юборинг еки қуйидаги тугма ўрқали биз билан улашинг.")
-                .build();
-
-        LanguagePs sharePhoneNumber = LanguagePs.builder().key("share.phone.number").primaryLang("Uz").build();
-        LanguageSourcePs sharePhoneNumberUz = LanguageSourcePs.builder().languagePs(sharePhoneNumber)
-                .language("Uz")
-                .translation("\uD83D\uDCDEТелефон рақамини юбориш")
-                .build();
-
-        LanguagePs chooseMarket = LanguagePs.builder().key("choose.market").primaryLang("Uz").build();
-        LanguageSourcePs chooseMarketUz = LanguageSourcePs.builder().languagePs(chooseMarket)
-                .language("Uz")
-                .translation("Дўконингиз жойлашган бозорни танланг.")
-                .build();
-
-        languageRepositoryPs.saveAll(List.of(chooseLang, uzbek, russian, enterName,
-                enterPhoneNumber, sharePhoneNumber, chooseMarket));
-        languageSourceRepositoryPs.saveAll(List.of(chooseLangUz, uzbekUz, russianUz,
-                enterNameUz, enterPhoneNumberUz, sharePhoneNumberUz, chooseMarketUz));
+    public void addRuLangValues() throws IOException {
+        Properties properties = new Properties();
+        try (InputStream input = DataLoader.class.getClassLoader()
+                .getResourceAsStream("messages_ru.properties")) {
+            properties.load(input);
+        }
+        for (String key : properties.stringPropertyNames()) {
+            String value = properties.getProperty(key);
+            LanguagePs languagePs = languageRepositoryPs.findByKey(key);
+            LanguageSourcePs sourcePs = LanguageSourcePs.builder()
+                    .languagePs(languagePs).language("Ru").translation(value).build();
+            languageSourceRepositoryPs.save(sourcePs);
+        }
     }
 }

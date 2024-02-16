@@ -48,4 +48,7 @@ public class TgUser extends AbsLong {
     @ManyToOne(fetch = FetchType.LAZY)
     private Market market;
 
+    @Column(name = "lang")
+    private String lang;
+
 }

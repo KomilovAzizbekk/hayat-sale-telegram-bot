@@ -12,6 +12,7 @@ import uz.mediasolutions.saleservicebot.exceptions.RestException;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.mapper.ProductMapper;
 import uz.mediasolutions.saleservicebot.payload.ProductDTO;
+import uz.mediasolutions.saleservicebot.payload.ProductResDTO;
 import uz.mediasolutions.saleservicebot.repository.CategoryRepository;
 import uz.mediasolutions.saleservicebot.repository.ProductRepository;
 import uz.mediasolutions.saleservicebot.service.abs.ProductService;
@@ -27,38 +28,38 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
 
     @Override
-    public ApiResult<Page<ProductDTO>> getAllByCategory(UUID cId, int page, int size, String name) {
+    public ApiResult<Page<ProductResDTO>> getAllByCategory(UUID cId, int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
                     .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, cId, name, name);
-            Page<ProductDTO> map = products.map(productMapper::toDTO);
+            Page<ProductResDTO> map = products.map(productMapper::toResDTO);
             return ApiResult.success(map);
         }
         Page<Product> products = productRepository.findAllByCategoryIdOrderByCreatedAtDesc(pageable, cId);
-        Page<ProductDTO> map = products.map(productMapper::toDTO);
+        Page<ProductResDTO> map = products.map(productMapper::toResDTO);
         return ApiResult.success(map);
     }
 
     @Override
-    public ApiResult<Page<ProductDTO>> getAll(int page, int size, String name) {
+    public ApiResult<Page<ProductResDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
                     .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, name, name);
-            Page<ProductDTO> map = products.map(productMapper::toDTO);
+            Page<ProductResDTO> map = products.map(productMapper::toResDTO);
             return ApiResult.success(map);
         }
         Page<Product> products = productRepository.findAllByOrderByCreatedAtDesc(pageable);
-        Page<ProductDTO> map = products.map(productMapper::toDTO);
+        Page<ProductResDTO> map = products.map(productMapper::toResDTO);
         return ApiResult.success(map);
     }
 
     @Override
-    public ApiResult<ProductDTO> getById(UUID id) {
+    public ApiResult<ProductResDTO> getById(UUID id) {
         Product product = productRepository.findById(id).orElseThrow(
                 () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
-        return ApiResult.success(productMapper.toDTO(product));
+        return ApiResult.success(productMapper.toResDTO(product));
     }
 
     @Override

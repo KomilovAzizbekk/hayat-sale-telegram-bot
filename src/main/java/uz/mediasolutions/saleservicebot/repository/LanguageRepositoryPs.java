@@ -15,4 +15,5 @@ public interface LanguageRepositoryPs extends JpaRepository<LanguagePs, Long> {
 
     Page<LanguagePs> findAllByKeyContainingIgnoreCase(Pageable pageable, String key);
 
+    LanguagePs findByKey(String key);
 }

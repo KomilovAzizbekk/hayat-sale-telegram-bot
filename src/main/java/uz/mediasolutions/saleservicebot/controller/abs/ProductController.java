@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.payload.ProductDTO;
+import uz.mediasolutions.saleservicebot.payload.ProductResDTO;
 import uz.mediasolutions.saleservicebot.utills.constants.Rest;
 
 import javax.validation.Valid;
@@ -23,20 +24,20 @@ public interface ProductController {
 
     @GetMapping(GET_ALL)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<Page<ProductDTO>> getAll(@RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
-                                       @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size,
-                                       @RequestParam(defaultValue = "null") String name);
+    ApiResult<Page<ProductResDTO>> getAll(@RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
+                                          @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size,
+                                          @RequestParam(defaultValue = "null") String name);
 
     @GetMapping(GET_BY_CATEGORY_PAGE)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<Page<ProductDTO>> getAllByCategory(@PathVariable UUID cId,
+    ApiResult<Page<ProductResDTO>> getAllByCategory(@PathVariable UUID cId,
                                                  @RequestParam(defaultValue = Rest.DEFAULT_PAGE_NUMBER) int page,
                                                  @RequestParam(defaultValue = Rest.DEFAULT_PAGE_SIZE) int size,
                                                  @RequestParam(defaultValue = "null") String name);
 
     @GetMapping(GET_BY_ID)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
-    ApiResult<ProductDTO> getById(@PathVariable UUID id);
+    ApiResult<ProductResDTO> getById(@PathVariable UUID id);
 
     @PostMapping(ADD)
     @PreAuthorize(value = "hasRole('ROLE_ADMIN')")
