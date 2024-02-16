@@ -84,21 +84,6 @@ public class DataLoader implements CommandLineRunner {
         userRepository.save(admin);
     }
 
-//    public void addMarket() {
-//        Market кўйликБозори = Market.builder()
-//                .nameUz("Кўйлик бозори")
-//                .build();
-//
-//        Market жомъеБозори = Market.builder()
-//                .nameUz("Жомъе бозори")
-//                .build();
-//
-//        Market паркентскийБозори = Market.builder()
-//                .nameUz("Паркентский бозори")
-//                .build();
-//        marketRepository.saveAll(List.of(кўйликБозори, жомъеБозори, паркентскийБозори));
-//    }
-
     public void addUzLangValues() throws IOException {
         Properties properties = new Properties();
         try (InputStream input = DataLoader.class.getClassLoader()
