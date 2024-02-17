@@ -32,6 +32,8 @@ public class DataLoader implements CommandLineRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final StatusRepository statusRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
     @Value("${spring.sql.init.mode}")
     private String mode;
@@ -52,6 +54,8 @@ public class DataLoader implements CommandLineRunner {
             addStatus();
             addUzLangValues();
             addRuLangValues();
+            addMarket();
+            addCategoryAndProduct();
         }
 
     }
@@ -82,6 +86,19 @@ public class DataLoader implements CommandLineRunner {
                 .enabled(true)
                 .build();
         userRepository.save(admin);
+    }
+
+    public void addMarket() {
+        Market market = Market.builder().nameUz("Чорсу бозори").nameRu("Рынок Чорсу").build();
+        marketRepository.save(market);
+    }
+
+    public void addCategoryAndProduct() {
+        Category category = Category.builder().nameUz("Техника воситалари").nameRu("Технические инструменты").number(1).build();
+        Category saved = categoryRepository.save(category);
+
+        Product product = Product.builder().category(saved).number(1).nameUz("Телефон").nameRu("Телефон").build();
+        productRepository.save(product);
     }
 
     public void addUzLangValues() throws IOException {
