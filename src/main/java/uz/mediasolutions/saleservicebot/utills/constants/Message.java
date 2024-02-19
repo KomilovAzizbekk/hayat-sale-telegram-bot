@@ -80,4 +80,5 @@ public interface Message {
     String CHOSEN_PRODUCT = "chosen.product";
     String ALL_INFO_CHOSEN_PRODUCT = "all.info.chosen.product";
     String ABOUT_US = "about.us";
+    String CLICK_START = "click.start";
 }

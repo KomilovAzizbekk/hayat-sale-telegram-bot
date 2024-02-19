@@ -36,7 +36,9 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class MakeService {
 
-    private static final String CHANNEL_ID = "-1001903287909";
+    public final String CHANNEL_ID_APP = "-1002046346230";
+    public final String CHANNEL_ID_SUG_COMP = "-1001998679932";
+    public final String CHANNEL_ID_ORDER = "-1001997761469";
     private final TgUserRepository tgUserRepository;
     private final MarketRepository marketRepository;
     private final CategoryRepository categoryRepository;
@@ -204,7 +206,7 @@ public class MakeService {
     }
 
     private static final String BUNDLE_BASE_NAME = "messages";
-    private static final String DOMAIN_ORDER = "https://sale-service-bot-admin-front.netlify.app/order/";
+    private static final String DOMAIN_ORDER = "https://hayat.medias.uz/order/";
     private static final String UZ = "Uz";
     private static final String RU = "Ru";
 
@@ -264,6 +266,11 @@ public class MakeService {
             return update.getCallbackQuery().getMessage().getChatId().toString();
         }
         return "";
+    }
+
+    public SendMessage whenRerun(Update update) {
+        String chatId = getChatId(update);
+        return new SendMessage(chatId, getMessage(Message.CLICK_START, getUserLanguage(chatId)));
     }
 
     //THESE 2 METHODS WORK WHEN /START BUTTON CLICKED
@@ -473,7 +480,7 @@ public class MakeService {
         TgUser tgUser = tgUserRepository.findByChatId(chatId);
         tgUser.setMarket(market);
         tgUserRepository.save(tgUser);
-        SendMessage sendMessage = new SendMessage(CHANNEL_ID,
+        SendMessage sendMessage = new SendMessage(CHANNEL_ID_APP,
                 String.format(getMessage(Message.APPLICATION, getUserLanguage(chatId)),
                         tgUser.getId(),
                         tgUser.getName(),
@@ -520,7 +527,7 @@ public class MakeService {
         tgUserRepository.save(tgUser);
 
         EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setChatId(CHANNEL_ID);
+        editMessageText.setChatId(CHANNEL_ID_APP);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         editMessageText.setText(
                 String.format(getMessage(Message.ACCEPTED_APPLICATION, getUserLanguage(chatId)),
@@ -543,7 +550,7 @@ public class MakeService {
         TgUser tgUser = tgUserRepository.findByChatId(chatId);
 
         EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setChatId(CHANNEL_ID);
+        editMessageText.setChatId(CHANNEL_ID_APP);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         editMessageText.setText(
                 String.format(getMessage(Message.REJECTED_APPLICATION, getUserLanguage(chatId)),
@@ -634,7 +641,7 @@ public class MakeService {
                 .build();
         SuggestionsComplaints complaints = suggestsComplaintsRepo.save(suggestionsComplaints);
 
-        SendMessage sendMessage = new SendMessage(CHANNEL_ID,
+        SendMessage sendMessage = new SendMessage(CHANNEL_ID_SUG_COMP,
                 String.format(getMessage(Message.SUGGEST_COMPLAINT, getUserLanguage(chatId)),
                         complaints.getId(),
                         tgUser.getName(),
@@ -1488,7 +1495,7 @@ public class MakeService {
         String date = order.getOrderedTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss"));
         String comment = order.getComment();
 
-        SendMessage sendMessage = new SendMessage(CHANNEL_ID,
+        SendMessage sendMessage = new SendMessage(CHANNEL_ID_ORDER,
                 String.format(getMessage(Message.ORDER, language),
                         order.getNumber(),
                         name,
@@ -1635,7 +1642,7 @@ public class MakeService {
                 returnComment(comment, language),
                 getOrderStatusName(chatId)));
         editMessageText.enableHtml(true);
-        editMessageText.setChatId(CHANNEL_ID);
+        editMessageText.setChatId(CHANNEL_ID_ORDER);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         return editMessageText;
     }
@@ -1687,7 +1694,7 @@ public class MakeService {
                         getOrderStatusName(chatId))
         );
         editMessageText.enableHtml(true);
-        editMessageText.setChatId(CHANNEL_ID);
+        editMessageText.setChatId(CHANNEL_ID_ORDER);
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         return editMessageText;
     }

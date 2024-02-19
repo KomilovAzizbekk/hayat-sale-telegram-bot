@@ -1,5 +1,6 @@
 package uz.mediasolutions.saleservicebot.service;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
@@ -15,9 +16,7 @@ import uz.mediasolutions.saleservicebot.repository.FileRepository;
 import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -30,13 +29,13 @@ public class TgService extends TelegramLongPollingBot {
     @Override
     public String getBotUsername() {
         return "uygogo_bot";
-//        return "sakaka_bot";
+//        return "hayat_rasmiydiller_bot";
     }
 
     @Override
     public String getBotToken() {
         return "5049026983:AAHjxVS4KdTmMLp4x_ir9khH4w1tB4h6pPQ";
-//        return "6052104473:AAEscLILevwPMcG_00PYqAf-Kpb7eIUCIGg";
+//        return "6547891262:AAFHC38MvnNiMGi3KotogPbHWDgho1So-iE";
     }
 
     @Override
@@ -51,8 +50,16 @@ public class TgService extends TelegramLongPollingBot {
         } else if (update.hasMessage() && update.getMessage().hasText() &&
                 update.getMessage().getText().equals("/start")) {
             execute(makeService.whenStart(update));
+        } else if (makeService.getUserState(chatId1).equals(BotState.START) &&
+                (!update.hasMessage() ||
+                        !update.getMessage().hasText() ||
+                        !update.getMessage().getText().equals("/start"))
+                && !(makeService.getChatId(update).equals(makeService.CHANNEL_ID_APP) ||
+                makeService.getChatId(update).equals(makeService.CHANNEL_ID_SUG_COMP) ||
+                makeService.getChatId(update).equals(makeService.CHANNEL_ID_ORDER))) {
+            execute(makeService.whenRerun(update));
         } else {
-            System.out.println(update);
+//            System.out.println(update);
             if (update.hasMessage() && update.getMessage().hasText()) {
                 String chatId = update.getMessage().getChatId().toString();
                 String text = update.getMessage().getText();

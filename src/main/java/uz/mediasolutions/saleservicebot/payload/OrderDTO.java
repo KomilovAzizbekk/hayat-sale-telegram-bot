@@ -27,6 +27,8 @@ public class OrderDTO {
 
     private String orderedTime;
 
+    private String status;
+
     private TgUserDTO user;
 
     private List<ChosenProductDTO> products;

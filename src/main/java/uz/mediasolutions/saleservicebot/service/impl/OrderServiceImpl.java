@@ -47,6 +47,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(id).orElseThrow(
                 () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
         order.setStatus(statusRepository.findByName(StatusName.DELIVERED));
+        orderRepository.save(order);
         try {
             tgService.execute(makeService.whenDelivered(order.getTgUser().getChatId(), order));
         } catch (TelegramApiException ignored) {
@@ -57,12 +58,16 @@ public class OrderServiceImpl implements OrderService {
 
     private OrderDTO toOrderDTO(Order order) {
         String orderedTime = order.getOrderedTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss"));
+        Order found = orderRepository.findById(order.getId()).orElseThrow(
+                () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
+
         return OrderDTO.builder()
                 .id(order.getId())
                 .number(order.getNumber())
                 .lan(order.getLan())
                 .lat(order.getLat())
                 .user(toTgUserDTO(order.getTgUser()))
+                .status(found.getStatus().getName().name())
                 .orderedTime(orderedTime)
                 .comment(order.getComment())
                 .products(toChosenProductDTOList(order.getChosenProducts()))

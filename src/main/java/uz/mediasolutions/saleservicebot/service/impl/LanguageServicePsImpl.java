@@ -115,7 +115,7 @@ public class LanguageServicePsImpl implements LanguageServicePs {
         if (key.equals("null")) {
             return ApiResult.success(languageRepository.findAll(pageable));
         }
-        return ApiResult.success(languageRepository.findAllByKeyContainingIgnoreCase(pageable, key));
+        return ApiResult.success(languageRepository.findAllByKeyAndTranslations(pageable, key));
     }
 
     @Override
