@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import uz.mediasolutions.saleservicebot.entity.LanguagePs;
 import uz.mediasolutions.saleservicebot.entity.LanguageSourcePs;
@@ -119,7 +120,7 @@ public class LanguageServicePsImpl implements LanguageServicePs {
     }
 
     @Override
-    public ApiResult<Map<String, String>> getAllByLanguage(String language) {
+    public ResponseEntity<Map<String, String>> getAllByLanguage(String language) {
         List<LanguagePs> allByLanguage = languageRepository.findAll();
         Map<String, String> languageSourceMap = new HashMap<>();
         if (!allByLanguage.isEmpty()) {
@@ -134,7 +135,7 @@ public class LanguageServicePsImpl implements LanguageServicePs {
                 }
             }
         }
-        return ApiResult.success(languageSourceMap);
+        return new ResponseEntity<>(languageSourceMap, HttpStatus.OK);
     }
 
 }

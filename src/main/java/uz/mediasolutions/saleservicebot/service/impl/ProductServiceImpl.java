@@ -32,7 +32,7 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
-                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, cId, name, name);
+                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(pageable, cId, name, name);
             Page<ProductResDTO> map = products.map(productMapper::toResDTO);
             return ApiResult.success(map);
         }
@@ -46,11 +46,11 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
-                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, name, name);
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(pageable, name, name);
             Page<ProductResDTO> map = products.map(productMapper::toResDTO);
             return ApiResult.success(map);
         }
-        Page<Product> products = productRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<Product> products = productRepository.findAllByOrderByNumberAsc(pageable);
         Page<ProductResDTO> map = products.map(productMapper::toResDTO);
         return ApiResult.success(map);
     }
@@ -110,8 +110,8 @@ public class ProductServiceImpl implements ProductService {
                 () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
 
         return Product.builder()
-                .nameUz(dto.getNameUz())
-                .nameRu(dto.getNameRu())
+                .nameUz(dto.getNameUz().trim())
+                .nameRu(dto.getNameRu().trim())
                 .number(dto.getNumber())
                 .category(category)
                 .build();

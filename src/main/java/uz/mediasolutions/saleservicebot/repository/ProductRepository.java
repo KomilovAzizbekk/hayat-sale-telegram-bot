@@ -16,6 +16,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     List<Product> findAllByCategoryId(UUID cId, Sort sort);
 
+    List<Product> findAllByCategoryId(UUID cId);
+
     Product findByNameRu(String nameRu);
 
     Product findByNameUz(String nameUz);
@@ -24,9 +26,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsByNumberAndCategoryIdAndId(Integer number, UUID categoryId, UUID id);
 
-    Page<Product> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(Pageable pageable, String nameUz, String nameRu);
+    Page<Product> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(Pageable pageable, String nameUz, String nameRu);
 
-    Page<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(Pageable pageable, UUID cId, String nameUz, String nameRu);
+    Page<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(Pageable pageable, UUID cId, String nameUz, String nameRu);
 
-    Page<Product> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    Page<Product> findAllByOrderByNumberAsc(Pageable pageable);
 }

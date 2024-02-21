@@ -1,6 +1,7 @@
 package uz.mediasolutions.saleservicebot.controller.abs;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.mediasolutions.saleservicebot.entity.LanguagePs;
@@ -28,7 +29,7 @@ public interface LanguageController {
                                                @RequestParam(defaultValue = "null", required = false) String key);
 
     @GetMapping(ALL_BY_LANG)
-    ApiResult<Map<String, String>> getAllByLang(@RequestParam(defaultValue = "Uz") String language);
+    ResponseEntity<Map<String, String>> getAllByLang(@RequestParam(defaultValue = "Uz") String language);
 
     @PostMapping(CREATE_EDIT)
     ApiResult<?> createTranslation(@RequestBody TranslateDto dto);

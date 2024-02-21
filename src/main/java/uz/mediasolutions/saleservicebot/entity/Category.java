@@ -32,7 +32,7 @@ public class Category extends AbsUUID {
     @Column(name = "nameRu")
     private String nameRu;
 
-    @Column(unique = true, name = "number")
+    @Column(name = "number")
     private Integer number;
 
 }

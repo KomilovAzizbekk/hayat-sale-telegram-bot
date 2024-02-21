@@ -2,6 +2,7 @@ package uz.mediasolutions.saleservicebot.controller.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uz.mediasolutions.saleservicebot.controller.abs.LanguageController;
 import uz.mediasolutions.saleservicebot.entity.LanguagePs;
@@ -25,7 +26,7 @@ public class LanguageControllerImpl implements LanguageController {
     }
 
     @Override
-    public ApiResult<Map<String, String>> getAllByLang(String language) {
+    public ResponseEntity<Map<String, String>> getAllByLang(String language) {
         return languageServicePs.getAllByLanguage(language);
     }
 

@@ -7,11 +7,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import uz.mediasolutions.saleservicebot.entity.Category;
+import uz.mediasolutions.saleservicebot.entity.Product;
 import uz.mediasolutions.saleservicebot.exceptions.RestException;
 import uz.mediasolutions.saleservicebot.manual.ApiResult;
 import uz.mediasolutions.saleservicebot.mapper.CategoryMapper;
 import uz.mediasolutions.saleservicebot.payload.CategoryDTO;
 import uz.mediasolutions.saleservicebot.repository.CategoryRepository;
+import uz.mediasolutions.saleservicebot.repository.ProductRepository;
 import uz.mediasolutions.saleservicebot.service.abs.CategoryService;
 
 import java.util.List;
@@ -25,16 +27,18 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryMapper categoryMapper;
 
+    private final ProductRepository productRepository;
+
     @Override
     public ApiResult<Page<CategoryDTO>> getAll(int page, int size, String name) {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Category> categories = categoryRepository.
-                    findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByCreatedAtDesc(pageable, name, name);
+                    findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(pageable, name, name);
             Page<CategoryDTO> map = categories.map(categoryMapper::toDTO);
             return ApiResult.success(map);
         }
-        Page<Category> categories = categoryRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<Category> categories = categoryRepository.findAllByOrderByNumberAsc(pageable);
         Page<CategoryDTO> map = categories.map(categoryMapper::toDTO);
         return ApiResult.success(map);
     }
@@ -51,7 +55,7 @@ public class CategoryServiceImpl implements CategoryService {
         if (categoryRepository.existsByNumber(categoryDTO.getNumber()))
             throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
         else {
-            categoryRepository.save(categoryMapper.toEntity(categoryDTO));
+            categoryRepository.save(toEntity(categoryDTO));
             return ApiResult.success("SAVED SUCCESSFULLY");
         }
     }
@@ -75,10 +79,20 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public ApiResult<?> delete(UUID id) {
         try {
+            List<Product> all = productRepository.findAllByCategoryId(id);
+            productRepository.deleteAll(all);
             categoryRepository.deleteById(id);
         } catch (Exception e) {
             throw RestException.restThrow("CANNOT DELETE", HttpStatus.CONFLICT);
         }
         return ApiResult.success("DELETED SUCCESSFULLY");
+    }
+
+    private Category toEntity(CategoryDTO categoryDTO) {
+        return Category.builder()
+                .nameUz(categoryDTO.getNameUz().trim())
+                .nameRu(categoryDTO.getNameRu().trim())
+                .number(categoryDTO.getNumber())
+                .build();
     }
 }

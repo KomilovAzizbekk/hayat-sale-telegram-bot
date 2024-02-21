@@ -28,14 +28,14 @@ public class TgService extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "uygogo_bot";
-//        return "hayat_rasmiydiller_bot";
+//        return "uygogo_bot";
+        return "hayat_rasmiydiller_bot";
     }
 
     @Override
     public String getBotToken() {
-        return "5049026983:AAHjxVS4KdTmMLp4x_ir9khH4w1tB4h6pPQ";
-//        return "6547891262:AAFHC38MvnNiMGi3KotogPbHWDgho1So-iE";
+//        return "5049026983:AAHjxVS4KdTmMLp4x_ir9khH4w1tB4h6pPQ";
+        return "6547891262:AAFHC38MvnNiMGi3KotogPbHWDgho1So-iE";
     }
 
     @Override
@@ -59,7 +59,7 @@ public class TgService extends TelegramLongPollingBot {
                 makeService.getChatId(update).equals(makeService.CHANNEL_ID_ORDER))) {
             execute(makeService.whenRerun(update));
         } else {
-//            System.out.println(update);
+            System.out.println(update);
             if (update.hasMessage() && update.getMessage().hasText()) {
                 String chatId = update.getMessage().getChatId().toString();
                 String text = update.getMessage().getText();
@@ -130,6 +130,7 @@ public class TgService extends TelegramLongPollingBot {
                 } else if ((makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) ||
                         makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) ||
                         makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) &&
+                        text.length() > 6 &&
                         text.substring(0, 6).equals(makeService.getMessage(Message.BASKET,
                                 makeService.getUserLanguage(chatId)).substring(0, 6))) {
                     deleteMessage(update);
