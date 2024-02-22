@@ -81,4 +81,7 @@ public interface Message {
     String ALL_INFO_CHOSEN_PRODUCT = "all.info.chosen.product";
     String ABOUT_US = "about.us";
     String CLICK_START = "click.start";
+    String FILE_SAVED = "file.saved";
+    String CANNOT_SAVE_FILE = "cannot.save.file";
+    String UPLOAD_FILE = "upload.file";
 }

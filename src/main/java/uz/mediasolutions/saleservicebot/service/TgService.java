@@ -1,6 +1,5 @@
 package uz.mediasolutions.saleservicebot.service;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
@@ -12,18 +11,16 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRem
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.mediasolutions.saleservicebot.entity.TgUser;
 import uz.mediasolutions.saleservicebot.manual.BotState;
-import uz.mediasolutions.saleservicebot.repository.FileRepository;
 import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
-import java.util.*;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class TgService extends TelegramLongPollingBot {
 
     private final MakeService makeService;
-    private final FileRepository fileRepository;
     private final TgUserRepository tgUserRepository;
 
     @Override
@@ -66,6 +63,10 @@ public class TgService extends TelegramLongPollingBot {
                 if (makeService.getUserState(chatId).equals(BotState.CHOOSE_LANG) &&
                         text.equals(makeService.getMessage(Message.UZBEK, makeService.getUserLanguage(chatId)))) {
                     execute(makeService.whenUz(update));
+                } else if (text.equals("/upload")) {
+                    execute(makeService.whenUpload(update));
+                } else if (makeService.getUserState(chatId).equals(BotState.UPLOAD_FILE)) {
+                    execute(makeService.whenRerun(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_LANG) &&
                         text.equals(makeService.getMessage(Message.RUSSIAN, makeService.getUserLanguage(chatId)))) {
                     execute(makeService.whenRu(update));
@@ -90,7 +91,7 @@ public class TgService extends TelegramLongPollingBot {
                     execute(makeService.whenSettings2(update));
                 } else if (text.equals(makeService.getMessage(Message.MENU_PRICE_LIST, makeService.getUserLanguage(chatId))) &&
                         makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
-                    if (!fileRepository.findAll().isEmpty())
+                    if (makeService.fileId != null && makeService.format != null)
                         execute(makeService.sendFile(update));
                     else
                         execute(makeService.whenFileNotExists(update));
@@ -140,6 +141,10 @@ public class TgService extends TelegramLongPollingBot {
                     execute(makeService.whenOrderCreated2(update));
                 }
 
+            } else if (update.hasMessage() && update.getMessage().hasDocument()) {
+                if (makeService.getUserState(chatId1).equals(BotState.UPLOAD_FILE)) {
+                    execute(makeService.saveFile(update));
+                }
             } else if (update.hasMessage() && update.getMessage().hasContact()) {
                 String chatId = update.getMessage().getChatId().toString();
                 if (makeService.getUserState(chatId).equals(BotState.CHOOSE_MARKET)) {
@@ -150,12 +155,17 @@ public class TgService extends TelegramLongPollingBot {
                     execute(makeService.whenChangePhoneNumber2(update));
                 }
             } else if (update.hasCallbackQuery()) {
+                String chatId = update.getCallbackQuery().getFrom().getId().toString();
                 String data = update.getCallbackQuery().getData();
-                if (data.startsWith("accept")) {
+                if (data.startsWith("accept") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
                     execute(makeService.acceptUser(update));
                     execute(makeService.whenAcceptSendMessageToUser(update));
                     execute(makeService.whenMenu(update));
-                } else if (data.startsWith("reject")) {
+                } else if (data.startsWith("reject") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
                     execute(makeService.rejectUser(update));
                     execute(makeService.whenRejectSendMessageToUser(update));
                 } else if (data.equals("changeName")) {
@@ -184,16 +194,24 @@ public class TgService extends TelegramLongPollingBot {
                 } else if (data.equals("officialOrder")) {
                     execute(makeService.whenOfficialOrder1(update));
                     execute(makeService.whenOfficialOrder(update));
-                } else if (data.startsWith("111")) {
+                } else if (data.startsWith("111") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
                     execute(makeService.whenAcceptOrder1(update));
                     execute(makeService.whenAcceptOrderForChannel(update));
-                } else if (data.startsWith("222")) {
+                } else if (data.startsWith("222") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
                     execute(makeService.whenAcceptOrder2(update));
                     execute(makeService.whenAcceptOrderForChannel(update));
-                } else if (data.startsWith("333")) {
+                } else if (data.startsWith("333") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
                     execute(makeService.whenAcceptOrder3(update));
                     execute(makeService.whenAcceptOrderForChannel(update));
-                } else if (data.startsWith("444")) {
+                } else if (data.startsWith("444") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
                     execute(makeService.whenRejectOrder1(update));
                     execute(makeService.whenRejectOrder2(update));
                 }
@@ -214,7 +232,6 @@ public class TgService extends TelegramLongPollingBot {
         org.telegram.telegrambots.meta.api.objects.Message message = execute(sendMessageRemove);
         DeleteMessage deleteMessage = new DeleteMessage(update.getMessage().getChatId().toString(), message.getMessageId());
         execute(deleteMessage);
-
     }
 
 }
