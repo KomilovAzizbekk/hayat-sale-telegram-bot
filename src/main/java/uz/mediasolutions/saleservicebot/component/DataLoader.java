@@ -56,8 +56,8 @@ public class DataLoader implements CommandLineRunner {
             addStatus();
             addUzLangValues();
             addRuLangValues();
-            addMarket();
-            addCategoryAndProduct();
+            addMarketDef();
+            addCategoryAndProductDef();
         }
 
     }
@@ -90,12 +90,12 @@ public class DataLoader implements CommandLineRunner {
         userRepository.save(admin);
     }
 
-    public void addMarket() {
+    public void addMarketDef() {
         Market market = Market.builder().nameUz("Чорсу бозори").nameRu("Рынок Чорсу").build();
         marketRepository.save(market);
     }
 
-    public void addCategoryAndProduct() {
+    public void addCategoryAndProductDef() {
         Category category = Category.builder().nameUz("Техника воситалари").nameRu("Технические инструменты").number(1).build();
         Category saved = categoryRepository.save(category);
 
