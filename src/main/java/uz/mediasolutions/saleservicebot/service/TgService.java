@@ -211,26 +211,23 @@ public class TgService extends TelegramLongPollingBot {
                 } else if (data.equals("officialOrder")) {
                     execute(makeService.whenOfficialOrder1(update));
                     execute(makeService.whenOfficialOrder(update));
-                } else if (data.startsWith("111") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
-                    execute(makeService.whenAcceptOrder1(update));
-                    execute(makeService.whenAcceptOrderForChannel(update));
-                } else if (data.startsWith("222") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
-                    execute(makeService.whenAcceptOrder2(update));
-                    execute(makeService.whenAcceptOrderForChannel(update));
-                } else if (data.startsWith("333") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
-                    execute(makeService.whenAcceptOrder3(update));
-                    execute(makeService.whenAcceptOrderForChannel(update));
-                } else if (data.startsWith("444") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
-                    execute(makeService.whenRejectOrder1(update));
-                    execute(makeService.whenRejectOrder2(update));
+                } else {
+                    boolean b = Objects.equals(chatId, makeService.CHAT_ID_1) ||
+                            Objects.equals(chatId, makeService.CHAT_ID_2) ||
+                            Objects.equals(chatId, makeService.CHAT_ID_3);
+                    if (data.startsWith("111") && b) {
+                        execute(makeService.whenAcceptOrder1(update));
+                        execute(makeService.whenAcceptOrderForChannel(update));
+                    } else if (data.startsWith("222") && b) {
+                        execute(makeService.whenAcceptOrder2(update));
+                        execute(makeService.whenAcceptOrderForChannel(update));
+                    } else if (data.startsWith("333") && b) {
+                        execute(makeService.whenAcceptOrder3(update));
+                        execute(makeService.whenAcceptOrderForChannel(update));
+                    } else if (data.startsWith("444") && b) {
+                        execute(makeService.whenRejectOrder1(update));
+                        execute(makeService.whenRejectOrder2(update));
+                    }
                 }
             } else if (update.hasMessage() && update.getMessage().hasLocation()) {
                 String chatId = update.getMessage().getChatId().toString();
