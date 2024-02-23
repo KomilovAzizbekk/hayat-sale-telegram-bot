@@ -84,4 +84,6 @@ public interface Message {
     String FILE_SAVED = "file.saved";
     String CANNOT_SAVE_FILE = "cannot.save.file";
     String UPLOAD_FILE = "upload.file";
+    String POST = "post";
+    String POST_SENT = "post.sent";
 }

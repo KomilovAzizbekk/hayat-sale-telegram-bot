@@ -28,7 +28,7 @@ public class LanguageSourcePs implements Serializable {
     @Column(name = "language")
     private String language;
 
-    @Column(name = "translation")
+    @Column(columnDefinition = "text", name = "translation")
     private String translation;
 
     public LanguageSourcePs(LanguagePs languagePs, String language, String translation) {

@@ -37,10 +37,10 @@ public class TgUser extends AbsLong {
     private String phoneNumber;
 
     @Column(name = "is_accepted")
-    private boolean isAccepted;
+    private boolean isAccepted = true;
 
     @Column(name = "is_rejected")
-    private boolean isRejected;
+    private boolean isRejected = false;
 
     @Column(name = "is_blocked")
     private boolean isBlocked;

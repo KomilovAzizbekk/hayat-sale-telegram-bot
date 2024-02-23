@@ -4,8 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.*;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -14,6 +15,7 @@ import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -63,6 +65,8 @@ public class TgService extends TelegramLongPollingBot {
                 if (makeService.getUserState(chatId).equals(BotState.CHOOSE_LANG) &&
                         text.equals(makeService.getMessage(Message.UZBEK, makeService.getUserLanguage(chatId)))) {
                     execute(makeService.whenUz(update));
+                } else if (text.equals("/post")) {
+                    execute(makeService.whenPost(update));
                 } else if (text.equals("/upload")) {
                     execute(makeService.whenUpload(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.UPLOAD_FILE)) {
@@ -76,9 +80,11 @@ public class TgService extends TelegramLongPollingBot {
                     execute(makeService.whenIncorrectPhoneFormat(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_MARKET)) {
                     execute(makeService.whenChooseMarket(update));
-                } else if (makeService.getUserState(chatId).equals(BotState.PENDING)) {
-                    execute(makeService.whenPending(update));
-                    execute(makeService.whenSendAppToChannel(update));
+//                } else if (makeService.getUserState(chatId).equals(BotState.PENDING)) {
+//                    execute(makeService.whenPending(update));
+//                    execute(makeService.whenSendAppToChannel(update));
+                } else if (makeService.getUserState(chatId).equals(BotState.MENU)) {
+                    execute(makeService.whenMenu(update));
                 } else if (text.equals(makeService.getMessage(Message.MENU_SUG_COMP, makeService.getUserLanguage(chatId))) &&
                         makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
                     execute(makeService.whenSuggestAndComplaint(update));
@@ -112,6 +118,13 @@ public class TgService extends TelegramLongPollingBot {
                 } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) &&
                         text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
                     execute(makeService.whenMenuForExistedUser(update));
+                } else if (makeService.getUserState(chatId).equals(BotState.POST) &&
+                        text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
+                    execute(makeService.whenStart(update));
+                } else if (makeService.getUserState(chatId).equals(BotState.POST) &&
+                        !text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
+                    whenPostText(update);
+                    execute(makeService.whenStart(update));
                 } else if ((makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY)) &&
                         makeService.getCategoryName(makeService.getUserLanguage(chatId)).contains(text)) {
                     execute(makeService.whenChosenCategory(update, text));
@@ -144,6 +157,9 @@ public class TgService extends TelegramLongPollingBot {
             } else if (update.hasMessage() && update.getMessage().hasDocument()) {
                 if (makeService.getUserState(chatId1).equals(BotState.UPLOAD_FILE)) {
                     execute(makeService.saveFile(update));
+                } else if (makeService.getUserState(chatId1).equals(BotState.POST)) {
+                    whenPostDocument(update);
+                    execute(makeService.whenStart(update));
                 }
             } else if (update.hasMessage() && update.getMessage().hasContact()) {
                 String chatId = update.getMessage().getChatId().toString();
@@ -157,18 +173,19 @@ public class TgService extends TelegramLongPollingBot {
             } else if (update.hasCallbackQuery()) {
                 String chatId = update.getCallbackQuery().getFrom().getId().toString();
                 String data = update.getCallbackQuery().getData();
-                if (data.startsWith("accept") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
-                    execute(makeService.acceptUser(update));
-                    execute(makeService.whenAcceptSendMessageToUser(update));
-                    execute(makeService.whenMenu(update));
-                } else if (data.startsWith("reject") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
-                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
-                    execute(makeService.rejectUser(update));
-                    execute(makeService.whenRejectSendMessageToUser(update));
-                } else if (data.equals("changeName")) {
+//                if (data.startsWith("accept") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+//                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+//                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
+//                    execute(makeService.acceptUser(update));
+//                    execute(makeService.whenAcceptSendMessageToUser(update));
+//                    execute(makeService.whenMenu(update));
+//                } else if (data.startsWith("reject") && (Objects.equals(chatId, makeService.CHAT_ID_1) ||
+//                        Objects.equals(chatId, makeService.CHAT_ID_2) ||
+//                        Objects.equals(chatId, makeService.CHAT_ID_3))) {
+//                    execute(makeService.rejectUser(update));
+//                    execute(makeService.whenRejectSendMessageToUser(update));
+//                }
+                if (data.equals("changeName")) {
                     execute(makeService.whenChangeName1(update));
                 } else if (data.equals("changePhone")) {
                     execute(makeService.deleteMessageForCallback(update));
@@ -220,6 +237,26 @@ public class TgService extends TelegramLongPollingBot {
                 if (makeService.getUserState(chatId).equals(BotState.SEND_LOCATION)) {
                     execute(makeService.whenComment(update));
                 }
+            } else if (update.hasMessage() && update.getMessage().hasPhoto()) {
+                if (makeService.getUserState(chatId1).equals(BotState.POST)) {
+                    whenPostPhoto(update);
+                    execute(makeService.whenStart(update));
+                }
+            } else if (update.hasMessage() && update.getMessage().hasAudio()) {
+                if (makeService.getUserState(chatId1).equals(BotState.POST)) {
+                    whenPostAudio(update);
+                    execute(makeService.whenStart(update));
+                }
+            } else if (update.hasMessage() && update.getMessage().hasVideo()) {
+                if (makeService.getUserState(chatId1).equals(BotState.POST)) {
+                    whenPostVideo(update);
+                    execute(makeService.whenStart(update));
+                }
+            } else if (update.hasMessage() && update.getMessage().hasVoice()) {
+                if (makeService.getUserState(chatId1).equals(BotState.POST)) {
+                    whenPostVoice(update);
+                    execute(makeService.whenStart(update));
+                }
             }
         }
     }
@@ -232,6 +269,126 @@ public class TgService extends TelegramLongPollingBot {
         org.telegram.telegrambots.meta.api.objects.Message message = execute(sendMessageRemove);
         DeleteMessage deleteMessage = new DeleteMessage(update.getMessage().getChatId().toString(), message.getMessageId());
         execute(deleteMessage);
+    }
+
+    @SneakyThrows
+    public void whenPostText(Update update) {
+        String chatId = makeService.getChatId(update);
+
+        List<TgUser> users = tgUserRepository.findAll();
+        for (TgUser user : users) {
+            if (!Objects.equals(user.getChatId(), chatId))
+                execute(new SendMessage(user.getChatId(), update.getMessage().getText()));
+        }
+        execute(new SendMessage(chatId,
+                String.format(makeService.getMessage(Message.POST_SENT,
+                        makeService.getUserLanguage(chatId)), users.size())));
+    }
+
+    @SneakyThrows
+    public void whenPostDocument(Update update) {
+        String fileId1 = update.getMessage().getDocument().getFileId();
+        String caption = update.getMessage().getCaption();
+        String chatId = makeService.getChatId(update);
+
+        SendDocument sendDocument = new SendDocument();
+        List<TgUser> users = tgUserRepository.findAll();
+        for (TgUser user : users) {
+            if (!Objects.equals(user.getChatId(), chatId)) {
+                sendDocument.setChatId(user.getChatId());
+                sendDocument.setDocument(new InputFile(fileId1));
+                if (caption != null)
+                    sendDocument.setCaption(caption);
+                execute(sendDocument);
+            }
+        }
+        execute(new SendMessage(chatId,
+                String.format(makeService.getMessage(Message.POST_SENT,
+                        makeService.getUserLanguage(chatId)), users.size())));
+    }
+
+    @SneakyThrows
+    public void whenPostPhoto(Update update) {
+        String chatId = makeService.getChatId(update);
+        String fileId1 = update.getMessage().getPhoto().get(0).getFileId();
+        String caption = update.getMessage().getCaption();
+        SendPhoto sendPhoto = new SendPhoto();
+        List<TgUser> users = tgUserRepository.findAll();
+        for (TgUser user : users) {
+            if (!Objects.equals(user.getChatId(), chatId)) {
+                sendPhoto.setChatId(user.getChatId());
+                sendPhoto.setPhoto(new InputFile(fileId1));
+                if (caption != null)
+                    sendPhoto.setCaption(caption);
+                execute(sendPhoto);
+            }
+        }
+        execute(new SendMessage(chatId,
+                String.format(makeService.getMessage(Message.POST_SENT,
+                        makeService.getUserLanguage(chatId)), users.size())));
+    }
+
+    @SneakyThrows
+    public void whenPostAudio(Update update) {
+        String chatId = makeService.getChatId(update);
+        String fileId1 = update.getMessage().getAudio().getFileId();
+        String caption = update.getMessage().getCaption();
+        SendAudio sendAudio = new SendAudio();
+        List<TgUser> users = tgUserRepository.findAll();
+        for (TgUser user : users) {
+            if (!Objects.equals(user.getChatId(), chatId)) {
+                sendAudio.setChatId(user.getChatId());
+                sendAudio.setAudio(new InputFile(fileId1));
+                if (caption != null)
+                    sendAudio.setCaption(caption);
+                execute(sendAudio);
+            }
+        }
+        execute(new SendMessage(chatId,
+                String.format(makeService.getMessage(Message.POST_SENT,
+                        makeService.getUserLanguage(chatId)), users.size())));
+    }
+
+    @SneakyThrows
+    public void whenPostVideo(Update update) {
+        String chatId = makeService.getChatId(update);
+        String fileId1 = update.getMessage().getVideo().getFileId();
+        String caption = update.getMessage().getCaption();
+        SendVideo sendVideo = new SendVideo();
+        List<TgUser> users = tgUserRepository.findAll();
+        for (TgUser user : users) {
+            if (!Objects.equals(user.getChatId(), chatId)) {
+                sendVideo.setChatId(user.getChatId());
+                sendVideo.setVideo(new InputFile(fileId1));
+                if (caption != null)
+                    sendVideo.setCaption(caption);
+                execute(sendVideo);
+            }
+        }
+        execute(new SendMessage(chatId,
+                String.format(makeService.getMessage(Message.POST_SENT,
+                        makeService.getUserLanguage(chatId)), users.size())));
+    }
+
+    @SneakyThrows
+    public void whenPostVoice(Update update) {
+        String chatId = makeService.getChatId(update);
+        String fileId1 = update.getMessage().getVoice().getFileId();
+        String caption = update.getMessage().getCaption();
+        SendVoice sendVoice = new SendVoice();
+        List<TgUser> users = tgUserRepository.findAll();
+        for (TgUser user : users) {
+            if (!Objects.equals(user.getChatId(), chatId)) {
+                sendVoice.setChatId(user.getChatId());
+                sendVoice.setVoice(new InputFile(fileId1));
+                if (caption != null)
+                    sendVoice.setCaption(caption);
+                execute(sendVoice);
+            }
+        }
+        execute(new SendMessage(chatId,
+                String.format(makeService.getMessage(Message.POST_SENT,
+                        makeService.getUserLanguage(chatId)), users.size())));
     }
 
 }

@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.*;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.*;
@@ -15,12 +15,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRem
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.mediasolutions.saleservicebot.entity.*;
 import uz.mediasolutions.saleservicebot.enums.StatusName;
 import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.repository.*;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -34,12 +36,14 @@ public class MakeService {
 
     public String fileId;
     public String format;
+    public Integer messageId;
     public final String CHANNEL_ID_APP = "-1002046346230";
     public final String CHANNEL_ID_SUG_COMP = "-1001998679932";
     public final String CHANNEL_ID_ORDER = "-1001997761469";
     public final String CHAT_ID_1 = "285710521";
     public final String CHAT_ID_2 = "6931160281";
     public final String CHAT_ID_3 = "1302908674";
+
     private final TgUserRepository tgUserRepository;
     private final MarketRepository marketRepository;
     private final CategoryRepository categoryRepository;
@@ -283,13 +287,13 @@ public class MakeService {
                 !tgUserRepository.findByChatId(chatId).isBlocked() &&
                 !tgUserRepository.findByChatId(chatId).isRejected()) {
             return whenMenuForExistedUser(update);
-        } else if (tgUserRepository.existsByChatId(chatId) &&
-                tgUserRepository.findByChatId(chatId).getName() != null &&
-                tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
-                tgUserRepository.findByChatId(chatId).getMarket() != null &&
-                !tgUserRepository.findByChatId(chatId).isAccepted() &&
-                !tgUserRepository.findByChatId(chatId).isRejected()) {
-            return new SendMessage(chatId, getMessage(Message.PLEASE_WAIT, getUserLanguage(chatId)));
+//        } else if (tgUserRepository.existsByChatId(chatId) &&
+//                tgUserRepository.findByChatId(chatId).getName() != null &&
+//                tgUserRepository.findByChatId(chatId).getPhoneNumber() != null &&
+//                tgUserRepository.findByChatId(chatId).getMarket() != null &&
+//                !tgUserRepository.findByChatId(chatId).isAccepted() &&
+//                !tgUserRepository.findByChatId(chatId).isRejected()) {
+//            return new SendMessage(chatId, getMessage(Message.PLEASE_WAIT, getUserLanguage(chatId)));
         } else {
             SendMessage sendMessage = new SendMessage(chatId,
                     getMessage(Message.LANG_SAME_FOR_2_LANG, getUserLanguage(chatId)));
@@ -336,14 +340,14 @@ public class MakeService {
         if (!tgUserRepository.existsByChatId(chatId)) {
             TgUser tgUser = TgUser.builder().chatId(chatId)
                     .lang(langCode)
-                    .isAccepted(false)
+                    .isAccepted(true)
                     .isBlocked(false)
                     .build();
             tgUserRepository.save(tgUser);
         } else {
             TgUser tgUser = tgUserRepository.findByChatId(chatId);
             tgUser.setLang(langCode);
-            tgUser.setAccepted(false);
+            tgUser.setAccepted(true);
             tgUser.setBlocked(false);
             tgUserRepository.save(tgUser);
         }
@@ -425,7 +429,7 @@ public class MakeService {
         SendMessage sendMessage = new SendMessage(chatId, getMessage(Message.CHOOSE_MARKET,
                 getUserLanguage(chatId)));
         sendMessage.setReplyMarkup(forChooseMarket(update));
-        setUserState(chatId, BotState.PENDING);
+        setUserState(chatId, BotState.MENU);
         return sendMessage;
     }
 
@@ -467,119 +471,125 @@ public class MakeService {
         return markup;
     }
 
-    public SendMessage whenPending(Update update) {
-        String chatId = getChatId(update);
+//    public SendMessage whenPending(Update update) {
+//        String chatId = getChatId(update);
 
-        Market market = getMarketByNameFromRepo(update.getMessage().getText(), getUserLanguage(chatId));
-        TgUser tgUser = tgUserRepository.findByChatId(chatId);
-        tgUser.setMarket(market);
-        tgUserRepository.save(tgUser);
+//        Market market = getMarketByNameFromRepo(update.getMessage().getText(), getUserLanguage(chatId));
+//        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+//        tgUser.setMarket(market);
+//        tgUserRepository.save(tgUser);
+//
+//        setUserState(chatId, BotState.IN_REVIEW);
+//        SendMessage sendMessage = new SendMessage(chatId, getMessage(Message.IN_REVIEW_MESSAGE, getUserLanguage(chatId)));
+//        sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
+//        return sendMessage;
+//    }
 
-        setUserState(chatId, BotState.IN_REVIEW);
-        SendMessage sendMessage = new SendMessage(chatId, getMessage(Message.IN_REVIEW_MESSAGE, getUserLanguage(chatId)));
-        sendMessage.setReplyMarkup(new ReplyKeyboardRemove(true));
-        return sendMessage;
-    }
+//    public SendMessage whenSendAppToChannel(Update update) {
+//        String chatId = getChatId(update);
+//
+//        Market market = getMarketByNameFromRepo(update.getMessage().getText(), getUserLanguage(chatId));
+//        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+//        tgUser.setMarket(market);
+//        tgUserRepository.save(tgUser);
+//        SendMessage sendMessage = new SendMessage(CHANNEL_ID_APP,
+//                String.format(getMessage(Message.APPLICATION, getUserLanguage(chatId)),
+//                        tgUser.getId(),
+//                        tgUser.getName(),
+//                        tgUser.getPhoneNumber(),
+//                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
+//        sendMessage.setReplyMarkup(forSendAppToChannel(update));
+//        sendMessage.enableHtml(true);
+//        setUserState(chatId, BotState.IN_REVIEW);
+//        return sendMessage;
+//    }
 
-    public SendMessage whenSendAppToChannel(Update update) {
-        String chatId = getChatId(update);
+//    private InlineKeyboardMarkup forSendAppToChannel(Update update) {
+//        String chatId = getChatId(update);
+//
+//        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+//        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+//
+//        InlineKeyboardButton button1 = new InlineKeyboardButton();
+//        InlineKeyboardButton button2 = new InlineKeyboardButton();
+//
+//        button1.setText(getMessage(Message.ACCEPT, getUserLanguage(chatId)));
+//        button2.setText(getMessage(Message.REJECT, getUserLanguage(chatId)));
+//
+//        button1.setCallbackData("accept" + update.getMessage().getChatId());
+//        button2.setCallbackData("reject" + update.getMessage().getChatId());
+//
+//        List<InlineKeyboardButton> row1 = new ArrayList<>();
+//
+//        row1.add(button1);
+//        row1.add(button2);
+//
+//        rowsInline.add(row1);
+//
+//        markupInline.setKeyboard(rowsInline);
+//
+//        return markupInline;
+//    }
 
-        Market market = getMarketByNameFromRepo(update.getMessage().getText(), getUserLanguage(chatId));
-        TgUser tgUser = tgUserRepository.findByChatId(chatId);
-        tgUser.setMarket(market);
-        tgUserRepository.save(tgUser);
-        SendMessage sendMessage = new SendMessage(CHANNEL_ID_APP,
-                String.format(getMessage(Message.APPLICATION, getUserLanguage(chatId)),
-                        tgUser.getId(),
-                        tgUser.getName(),
-                        tgUser.getPhoneNumber(),
-                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
-        sendMessage.setReplyMarkup(forSendAppToChannel(update));
-        sendMessage.enableHtml(true);
-        setUserState(chatId, BotState.IN_REVIEW);
-        return sendMessage;
-    }
+//    public EditMessageText acceptUser(Update update) {
+//        String chatId = update.getCallbackQuery().getData().substring(6);
+//        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+//        tgUser.setAccepted(true);
+//        tgUser.setRejected(false);
+//        tgUserRepository.save(tgUser);
+//
+//        EditMessageText editMessageText = new EditMessageText();
+//        editMessageText.setChatId(CHANNEL_ID_APP);
+//        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+//        editMessageText.setText(
+//                String.format(getMessage(Message.ACCEPTED_APPLICATION, getUserLanguage(chatId)),
+//                        tgUser.getId(),
+//                        tgUser.getName(),
+//                        tgUser.getPhoneNumber(),
+//                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
+//        editMessageText.enableHtml(true);
+//        return editMessageText;
+//    }
 
-    private InlineKeyboardMarkup forSendAppToChannel(Update update) {
-        String chatId = getChatId(update);
+//    public SendMessage whenAcceptSendMessageToUser(Update update) {
+//        String chatId = update.getCallbackQuery().getData().substring(6);
+//        setUserState(chatId, BotState.MENU);
+//        return new SendMessage(chatId, getMessage(Message.ACCEPTED_USER_MSG, getUserLanguage(chatId)));
+//    }
 
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
+//    public EditMessageText rejectUser(Update update) {
+//        String chatId = update.getCallbackQuery().getData().substring(6);
+//        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+//
+//        EditMessageText editMessageText = new EditMessageText();
+//        editMessageText.setChatId(CHANNEL_ID_APP);
+//        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+//        editMessageText.setText(
+//                String.format(getMessage(Message.REJECTED_APPLICATION, getUserLanguage(chatId)),
+//                        tgUser.getId(),
+//                        tgUser.getName(),
+//                        tgUser.getPhoneNumber(),
+//                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
+//        editMessageText.enableHtml(true);
+//        return editMessageText;
+//    }
 
-        InlineKeyboardButton button1 = new InlineKeyboardButton();
-        InlineKeyboardButton button2 = new InlineKeyboardButton();
-
-        button1.setText(getMessage(Message.ACCEPT, getUserLanguage(chatId)));
-        button2.setText(getMessage(Message.REJECT, getUserLanguage(chatId)));
-
-        button1.setCallbackData("accept" + update.getMessage().getChatId());
-        button2.setCallbackData("reject" + update.getMessage().getChatId());
-
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
-
-        row1.add(button1);
-        row1.add(button2);
-
-        rowsInline.add(row1);
-
-        markupInline.setKeyboard(rowsInline);
-
-        return markupInline;
-    }
-
-    public EditMessageText acceptUser(Update update) {
-        String chatId = update.getCallbackQuery().getData().substring(6);
-        TgUser tgUser = tgUserRepository.findByChatId(chatId);
-        tgUser.setAccepted(true);
-        tgUser.setRejected(false);
-        tgUserRepository.save(tgUser);
-
-        EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setChatId(CHANNEL_ID_APP);
-        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        editMessageText.setText(
-                String.format(getMessage(Message.ACCEPTED_APPLICATION, getUserLanguage(chatId)),
-                        tgUser.getId(),
-                        tgUser.getName(),
-                        tgUser.getPhoneNumber(),
-                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
-        editMessageText.enableHtml(true);
-        return editMessageText;
-    }
-
-    public SendMessage whenAcceptSendMessageToUser(Update update) {
-        String chatId = update.getCallbackQuery().getData().substring(6);
-        setUserState(chatId, BotState.MENU);
-        return new SendMessage(chatId, getMessage(Message.ACCEPTED_USER_MSG, getUserLanguage(chatId)));
-    }
-
-    public EditMessageText rejectUser(Update update) {
-        String chatId = update.getCallbackQuery().getData().substring(6);
-        TgUser tgUser = tgUserRepository.findByChatId(chatId);
-
-        EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setChatId(CHANNEL_ID_APP);
-        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        editMessageText.setText(
-                String.format(getMessage(Message.REJECTED_APPLICATION, getUserLanguage(chatId)),
-                        tgUser.getId(),
-                        tgUser.getName(),
-                        tgUser.getPhoneNumber(),
-                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
-        editMessageText.enableHtml(true);
-        return editMessageText;
-    }
-
-    public SendMessage whenRejectSendMessageToUser(Update update) {
-        String chatId = update.getCallbackQuery().getData().substring(6);
-        TgUser tgUser = tgUserRepository.findByChatId(chatId);
-        tgUser.setRejected(true);
-        tgUserRepository.save(tgUser);
-        return new SendMessage(chatId, getMessage(Message.REJECTED_USER_MSG, getUserLanguage(chatId)));
-    }
+//    public SendMessage whenRejectSendMessageToUser(Update update) {
+//        String chatId = update.getCallbackQuery().getData().substring(6);
+//        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+//        tgUser.setRejected(true);
+//        tgUserRepository.save(tgUser);
+//        return new SendMessage(chatId, getMessage(Message.REJECTED_USER_MSG, getUserLanguage(chatId)));
+//    }
 
     public SendMessage whenMenu(Update update) {
-        String chatId = update.getCallbackQuery().getData().substring(6);
+        String chatId = getChatId(update);
+
+        Market market = getMarketByNameFromRepo(update.getMessage().getText(), getUserLanguage(chatId));
+        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+        tgUser.setMarket(market);
+        tgUserRepository.save(tgUser);
+
         SendMessage sendMessage = new SendMessage(chatId,
                 getMessage(Message.MENU_MSG, getUserLanguage(chatId)));
         sendMessage.setReplyMarkup(forMenu(chatId));
@@ -1639,6 +1649,8 @@ public class MakeService {
                 DOMAIN_ORDER + order.getId()) +
                 getMessage(Message.CLICK_COURIER, language) + "</a>";
 
+        messageId = update.getCallbackQuery().getMessage().getMessageId();
+
         editMessageText.setText(String.format(getMessage(Message.ORDER, language),
                 order.getNumber(),
                 name,
@@ -1651,7 +1663,7 @@ public class MakeService {
                 getOrderStatusName(chatId)));
         editMessageText.enableHtml(true);
         editMessageText.setChatId(CHANNEL_ID_ORDER);
-        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessageText.setMessageId(messageId);
         return editMessageText;
     }
 
@@ -1707,18 +1719,45 @@ public class MakeService {
         return editMessageText;
     }
 
+    public EditMessageText whenDeliveredEdit(UUID orderId) {
+        Optional<Order> order1 = orderRepository.findById(orderId);
+
+        Order order = new Order();
+        if (order1.isPresent()) {
+            order = order1.get();
+        }
+        String chatId = order.getTgUser().getChatId();
+        String language = getUserLanguage(chatId);
+        String name = order.getTgUser().getName();
+        String phoneNumber = order.getTgUser().getPhoneNumber();
+        String date = order.getOrderedTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss"));
+        String comment = order.getComment();
+        String link = String.format("<a href='%s' target='_blank'>",
+                DOMAIN_ORDER + order.getId()) +
+                getMessage(Message.CLICK_COURIER, language) + "</a>";
+
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setMessageId(messageId);
+        editMessageText.setChatId(CHANNEL_ID_ORDER);
+        editMessageText.setText(
+                String.format(getMessage(Message.ORDER, language),
+                        order.getNumber(),
+                        name,
+                        phoneNumber,
+                        getMarketNameByUser(chatId, language),
+                        link,
+                        date,
+                        getChosenProductsNameAndCountForOrder(chatId, language),
+                        returnComment(comment, language),
+                        getOrderStatusName(chatId)));
+        editMessageText.enableHtml(true);
+        return editMessageText;
+    }
+
     @SneakyThrows
     public SendDocument sendFile(Update update) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
-
-//        InputStream inputStream = fileService.getFileContentAsStream();
-//        List<FileEntity> fileEntities = fileRepository.findAll();
-//        FileEntity fileEntity = fileEntities.get(fileEntities.size() - 1);
-//        Timestamp updatedAt = fileEntity.getUpdatedAt();
-//        LocalDateTime localDateTime = updatedAt.toLocalDateTime();
-//        String format = localDateTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-//        String fileName = fileEntity.getFileName();
 
         SendDocument sendDocument = new SendDocument();
         sendDocument.setChatId(chatId);
@@ -1758,7 +1797,7 @@ public class MakeService {
                 || Objects.equals(chatId, "1302908674")) {
             setUserState(chatId, BotState.UPLOAD_FILE);
             return new SendMessage(chatId, getMessage(Message.UPLOAD_FILE, language));
-        } else{
+        } else {
             return new SendMessage(chatId, getMessage(Message.CANNOT_SAVE_FILE, language));
         }
     }
@@ -1778,4 +1817,38 @@ public class MakeService {
         }
     }
 
+    public SendMessage whenPost(Update update) {
+        String chatId = getChatId(update);
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+
+        if (Objects.equals(chatId, "285710521") || Objects.equals(chatId, "6931160281")
+                || Objects.equals(chatId, "1302908674")) {
+            setUserState(chatId, BotState.POST);
+            sendMessage.setText(getMessage(Message.POST, getUserLanguage(chatId)));
+            sendMessage.enableHtml(true);
+            sendMessage.setReplyMarkup(forPost(update));
+            return sendMessage;
+        } else {
+            sendMessage.setText(getMessage(Message.CANNOT_SAVE_FILE, getUserLanguage(chatId)));
+            return sendMessage;
+        }
+    }
+
+    private ReplyKeyboardMarkup forPost(Update update) {
+        ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
+        List<KeyboardRow> rowList = new ArrayList<>();
+        KeyboardRow row1 = new KeyboardRow();
+
+        KeyboardButton button1 = new KeyboardButton();
+        button1.setText(getMessage(Message.BACK, getUserLanguage(getChatId(update))));
+
+        row1.add(button1);
+
+        rowList.add(row1);
+        markup.setKeyboard(rowList);
+        markup.setSelective(true);
+        markup.setResizeKeyboard(true);
+        return markup;
+    }
 }

@@ -50,6 +50,7 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
         try {
             tgService.execute(makeService.whenDelivered(order.getTgUser().getChatId(), order));
+            tgService.execute(makeService.whenDeliveredEdit(id));
         } catch (TelegramApiException ignored) {
         }
         return ApiResult.success("RECEIVED");
