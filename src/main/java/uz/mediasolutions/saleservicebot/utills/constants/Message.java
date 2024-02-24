@@ -86,4 +86,8 @@ public interface Message {
     String UPLOAD_FILE = "upload.file";
     String POST = "post";
     String POST_SENT = "post.sent";
+    String ONE_STEP_BACK = "one.step.back";
+    String CONTINUE = "continue";
+    String COUNT = "count";
+    String NOT_ZERO = "not.zero";
 }

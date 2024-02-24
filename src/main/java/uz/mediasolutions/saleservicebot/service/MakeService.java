@@ -29,12 +29,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.awt.SystemColor.text;
+
 
 @Service
 @RequiredArgsConstructor
 public class MakeService {
 
-    public String fileId;
     public String format;
     public Integer messageId;
     public final String CHANNEL_ID_APP = "-1002046346230";
@@ -45,6 +46,7 @@ public class MakeService {
     public final String CHAT_ID_3 = "1302908674";
 
     private final TgUserRepository tgUserRepository;
+    private final FileRepository fileRepository;
     private final MarketRepository marketRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
@@ -606,7 +608,7 @@ public class MakeService {
         return sendMessage;
     }
 
-    private ReplyKeyboardMarkup forMenu(String chatId) {
+    public ReplyKeyboardMarkup forMenu(String chatId) {
         ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
         List<KeyboardRow> rowList = new ArrayList<>();
         KeyboardRow row1 = new KeyboardRow();
@@ -1030,7 +1032,7 @@ public class MakeService {
         return markup;
     }
 
-    public SendMessage whenChosenProduct(Update update, String text) {
+    public SendMessage whenChosenProduct(Update update, String text, String s) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
         Product product = getProductByName(text, language);
@@ -1065,13 +1067,72 @@ public class MakeService {
                 String.format(getMessage(Message.CHOSEN_PRODUCT, language),
                         category,
                         text));
-        sendMessage.setReplyMarkup(forChosenProduct(update));
+        sendMessage.setReplyMarkup(forChosenProduct(update, text, s));
         sendMessage.enableHtml(true);
         setUserState(chatId, BotState.PRODUCT_COUNT);
         return sendMessage;
     }
 
-    private ReplyKeyboardMarkup forChosenProduct(Update update) {
+    List<Integer> selectedNumbers = new ArrayList<>();
+
+    public EditMessageText whenChosenProduct1(Update update, String text, String s) {
+        String x = "0";
+        if (!s.equals("❌")) {
+            if (!(selectedNumbers.isEmpty() && s.equals("0"))) {
+                selectedNumbers.add(Integer.parseInt(s));
+
+                StringBuilder combinedNumbers = new StringBuilder();
+                for (int number : selectedNumbers) {
+                    combinedNumbers.append(number);
+                }
+                x = combinedNumbers.toString();
+            }
+        } else {
+            selectedNumbers = new ArrayList<>();
+        }
+
+        String chatId = getChatId(update);
+        String language = getUserLanguage(chatId);
+        Product product = getProductByName(text, language);
+        String category = getCategoryNameByProduct(product, language);
+        boolean a = false;
+
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        if (!chosenProducts.isEmpty()) {
+            for (ChosenProduct value : chosenProducts) {
+                if (getProductNameByProduct(value.getProduct(), language)
+                        .equals(getProductNameByProduct(product, language))) {
+                    value.setTurn(true);
+                    chosenProductRepository.save(value);
+                    a = true;
+                }
+
+            }
+            if (!a) {
+                ChosenProduct chosenProduct = ChosenProduct.builder().product(product).turn(true).build();
+                ChosenProduct saved = chosenProductRepository.save(chosenProduct);
+                basket.getChosenProducts().add(saved);
+            }
+        } else {
+            ChosenProduct chosenProduct = ChosenProduct.builder().product(product).turn(true).build();
+            ChosenProduct saved = chosenProductRepository.save(chosenProduct);
+            basket.getChosenProducts().add(saved);
+        }
+        basketRepository.save(basket);
+
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setText(String.format(getMessage(Message.CHOSEN_PRODUCT, language),
+                category, text));
+        editMessageText.setChatId(chatId);
+        editMessageText.setReplyMarkup(forChosenProduct(update, text, x));
+        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessageText.enableHtml(true);
+        setUserState(chatId, BotState.PRODUCT_COUNT);
+        return editMessageText;
+    }
+
+    private InlineKeyboardMarkup forChosenProduct(Update update, String text, String s) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
 
@@ -1085,68 +1146,109 @@ public class MakeService {
             }
         }
 
-        ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboardRows = new ArrayList<>();
+        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        List<InlineKeyboardButton> rowX = new ArrayList<>();
 
-        KeyboardButton button1 = new KeyboardButton(getMessage(Message.BACK, language));
-        KeyboardButton button2 = new KeyboardButton(
-                getMessage(Message.BASKET, language) + "(" + count + ")");
+        InlineKeyboardButton button1 = new InlineKeyboardButton();
+        InlineKeyboardButton button2 = new InlineKeyboardButton();
+        InlineKeyboardButton buttonX = new InlineKeyboardButton();
 
-        KeyboardRow keyboardRow1 = new KeyboardRow();
-        keyboardRow1.add(button1);
-        keyboardRow1.add(button2);
-        keyboardRows.add(keyboardRow1);
+        button1.setText(getMessage(Message.BACK, language));
+        button2.setText(getMessage(Message.BASKET, language) + "(" + count + ")");
 
-        KeyboardRow row = new KeyboardRow();
+        button1.setCallbackData("back");
+        button2.setCallbackData("basket");
 
-        for (int i = 0; i < 9; i++) {
-            KeyboardButton button = new KeyboardButton(String.valueOf(i + 1));
-            row.add(button);
-            if (row.size() == 3) {
-                keyboardRows.add(row);
-                row = new KeyboardRow();
+        row.add(button1);
+        row.add(button2);
+        keyboardRows.add(row);
+
+        buttonX.setText(String.format(getMessage(Message.COUNT, getUserLanguage(chatId)), s));
+        buttonX.setCallbackData("xxx");
+        rowX.add(buttonX);
+        keyboardRows.add(rowX);
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        for (int i = 1; i < 10; i++) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setCallbackData(i + text);
+            button.setText(String.valueOf(i));
+            row1.add(button);
+            if (row1.size() == 3) {
+                keyboardRows.add(row1);
+                row1 = new ArrayList<>();
             }
         }
 
-        if (!row.isEmpty()) {
-            keyboardRows.add(row);
+        if (!row1.isEmpty()) {
+            keyboardRows.add(row1);
         }
-        markup.setKeyboard(keyboardRows);
-        markup.setSelective(true);
-        markup.setResizeKeyboard(true);
-        return markup;
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        InlineKeyboardButton button3 = new InlineKeyboardButton();
+        InlineKeyboardButton button4 = new InlineKeyboardButton();
+        InlineKeyboardButton button5 = new InlineKeyboardButton();
+
+        button3.setText("❌");
+        button4.setText("0");
+        button5.setText(getMessage(Message.CONTINUE, language));
+
+        button3.setCallbackData("❌" + text);
+        button4.setCallbackData("0" + text);
+        button5.setCallbackData("continue" + s);
+
+        row2.add(button3);
+        row2.add(button4);
+        row2.add(button5);
+        keyboardRows.add(row2);
+
+        markupInline.setKeyboard(keyboardRows);
+        return markupInline;
     }
 
-    public SendMessage whenAddProductToBasket(Update update, String text) {
+    public EditMessageText whenAddProductToBasket(Update update, String text) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
 
-        Basket basket = basketRepository.findByTgUserChatId(chatId);
-        List<ChosenProduct> chosenProducts = basket.getChosenProducts();
-        ChosenProduct chosenProduct = null;
-        for (ChosenProduct product : chosenProducts) {
-            if (product.isTurn()) {
-                chosenProduct = product;
-                product.setTurn(false);
-                chosenProductRepository.save(product);
-            }
-        }
-        assert chosenProduct != null;
-        Integer count = chosenProduct.getCount();
-        if (count != null) {
-            count += Integer.parseInt(text);
-        } else {
-            count = Integer.parseInt(text);
-        }
-        chosenProduct.setCount(count);
-        chosenProductRepository.save(chosenProduct);
+        selectedNumbers = new ArrayList<>();
 
-        SendMessage sendMessage = new SendMessage(chatId,
-                String.format(getMessage(Message.ALL_INFO_CHOSEN_PRODUCT, language),
-                        getProductNameByProduct(chosenProduct.getProduct(), language),
-                        text));
-        sendMessage.enableHtml(true);
-        return sendMessage;
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(chatId);
+        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        if (text.equals("0")) {
+            editMessageText.setText(getMessage(Message.NOT_ZERO, getUserLanguage(chatId)));
+            return editMessageText;
+        } else {
+            Basket basket = basketRepository.findByTgUserChatId(chatId);
+            List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+            ChosenProduct chosenProduct = null;
+            for (ChosenProduct product : chosenProducts) {
+                if (product.isTurn()) {
+                    chosenProduct = product;
+                    product.setTurn(false);
+                    chosenProductRepository.save(product);
+                }
+            }
+            assert chosenProduct != null;
+            Integer count = chosenProduct.getCount();
+            if (count != null) {
+                count += Integer.parseInt(text);
+            } else {
+                count = Integer.parseInt(text);
+            }
+            chosenProduct.setCount(count);
+            chosenProductRepository.save(chosenProduct);
+
+            editMessageText.setText(
+                    String.format(getMessage(Message.ALL_INFO_CHOSEN_PRODUCT, language),
+                            getProductNameByProduct(chosenProduct.getProduct(), language),
+                            text));
+            editMessageText.enableHtml(true);
+            return editMessageText;
+        }
     }
 
     public SendMessage whenBackInProductCount(Update update) {
@@ -1202,7 +1304,7 @@ public class MakeService {
         return sendMessage;
     }
 
-    private InlineKeyboardMarkup forWhenBasketInline(Update update) {
+    public InlineKeyboardMarkup forWhenBasketInline(Update update) {
         String chatId = getChatId(update);
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
@@ -1277,6 +1379,16 @@ public class MakeService {
 
         markupInline.setKeyboard(keyboardRows);
         return markupInline;
+    }
+
+    public EditMessageText edit(Update update) throws TelegramApiException {
+        String chatId = getChatId(update);
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(chatId);
+        editMessageText.setText(getMessage(Message.ONE_STEP_BACK,
+                getUserLanguage(chatId)));
+        editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        return editMessageText;
     }
 
     public EditMessageText whenClear(Update update) {
@@ -1759,11 +1871,13 @@ public class MakeService {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
 
+        FileEntity file = fileRepository.findByName("price");
+
         SendDocument sendDocument = new SendDocument();
         sendDocument.setChatId(chatId);
-        sendDocument.setDocument(new InputFile(fileId));
+        sendDocument.setDocument(new InputFile(file.getFileId()));
         sendDocument.setCaption(
-                String.format(getMessage(Message.ACTUAL_PRICE, language), format));
+                String.format(getMessage(Message.ACTUAL_PRICE, language), file.getUploadedTime()));
         return sendDocument;
     }
 
@@ -1805,11 +1919,24 @@ public class MakeService {
     public SendMessage saveFile(Update update) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
+
         if (Objects.equals(chatId, CHAT_ID_1) || Objects.equals(chatId, CHAT_ID_2)
                 || Objects.equals(chatId, CHAT_ID_3)) {
             Document document = update.getMessage().getDocument();
-            fileId = document.getFileId();
-            format = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            String uploadedTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            String fileId = document.getFileId();
+            if (!fileRepository.existsByName("price")) {
+                FileEntity file = FileEntity.builder()
+                        .fileId(fileId)
+                        .name("price")
+                        .uploadedTime(uploadedTime).build();
+                fileRepository.save(file);
+            } else {
+                FileEntity file = fileRepository.findByName("price");
+                file.setFileId(fileId);
+                file.setUploadedTime(uploadedTime);
+                fileRepository.save(file);
+            }
 
             return new SendMessage(chatId, getMessage(Message.FILE_SAVED, language));
         } else {

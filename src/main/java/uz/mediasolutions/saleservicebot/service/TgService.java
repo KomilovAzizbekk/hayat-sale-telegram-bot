@@ -6,15 +6,25 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.*;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
+import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import uz.mediasolutions.saleservicebot.entity.Basket;
+import uz.mediasolutions.saleservicebot.entity.ChosenProduct;
 import uz.mediasolutions.saleservicebot.entity.TgUser;
 import uz.mediasolutions.saleservicebot.manual.BotState;
+import uz.mediasolutions.saleservicebot.repository.BasketRepository;
+import uz.mediasolutions.saleservicebot.repository.ChosenProductRepository;
+import uz.mediasolutions.saleservicebot.repository.FileRepository;
 import uz.mediasolutions.saleservicebot.repository.TgUserRepository;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,6 +34,9 @@ public class TgService extends TelegramLongPollingBot {
 
     private final MakeService makeService;
     private final TgUserRepository tgUserRepository;
+    private final FileRepository fileRepository;
+    private final BasketRepository basketRepository;
+    private final ChosenProductRepository chosenProductRepository;
 
     @Override
     public String getBotUsername() {
@@ -97,7 +110,7 @@ public class TgService extends TelegramLongPollingBot {
                     execute(makeService.whenSettings2(update));
                 } else if (text.equals(makeService.getMessage(Message.MENU_PRICE_LIST, makeService.getUserLanguage(chatId))) &&
                         makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
-                    if (makeService.fileId != null && makeService.format != null)
+                    if (fileRepository.existsByName("price"))
                         execute(makeService.sendFile(update));
                     else
                         execute(makeService.whenFileNotExists(update));
@@ -133,14 +146,8 @@ public class TgService extends TelegramLongPollingBot {
                     execute(makeService.whenOrder(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) &&
                         makeService.getProductName(makeService.getUserLanguage(chatId)).contains(text)) {
-                    execute(makeService.whenChosenProduct(update, text));
-                } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
-                        makeService.numbersUpTo().contains(text)) {
-                    execute(makeService.whenAddProductToBasket(update, text));
-                    execute(makeService.whenChosenCategory2(update));
-                } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
-                        text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
-                    execute(makeService.whenBackInProductCount(update));
+                    deleteMessage(update);
+                    execute(makeService.whenChosenProduct(update, text, "0"));
                 } else if ((makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) ||
                         makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) ||
                         makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) &&
@@ -187,6 +194,24 @@ public class TgService extends TelegramLongPollingBot {
 //                }
                 if (data.equals("changeName")) {
                     execute(makeService.whenChangeName1(update));
+                } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
+                        data.equals("basket")) {
+                    whenBasket1(update);
+                } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
+                        data.substring(0,1).matches("\\d")) {
+                    execute(makeService.whenChosenProduct1(update, data.substring(1),
+                            data.substring(0,1)));
+                } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
+                        data.startsWith("continue")) {
+                    execute(makeService.whenAddProductToBasket(update, data.substring(8)));
+                    execute(makeService.whenChosenCategory2(update));
+                } else if (data.substring(0,1).equals("❌")) {
+                    execute(makeService.whenChosenProduct1(update, data.substring(1),
+                            data.substring(0,1)));
+                } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
+                        data.equals("back")) {
+                    execute(makeService.edit(update));
+                    execute(makeService.whenBackInProductCount(update));
                 } else if (data.equals("changePhone")) {
                     execute(makeService.deleteMessageForCallback(update));
                     execute(makeService.whenChangePhoneNumber1(update));
@@ -267,6 +292,7 @@ public class TgService extends TelegramLongPollingBot {
         DeleteMessage deleteMessage = new DeleteMessage(update.getMessage().getChatId().toString(), message.getMessageId());
         execute(deleteMessage);
     }
+
 
     @SneakyThrows
     public void whenPostText(Update update) {
@@ -386,6 +412,44 @@ public class TgService extends TelegramLongPollingBot {
         execute(new SendMessage(chatId,
                 String.format(makeService.getMessage(Message.POST_SENT,
                         makeService.getUserLanguage(chatId)), users.size())));
+    }
+
+    @SneakyThrows
+    public void whenBasket1(Update update) {
+        String chatId = makeService.getChatId(update);
+        String language = makeService.getUserLanguage(chatId);
+
+        Basket basket = basketRepository.findByTgUserChatId(chatId);
+        if (!basket.getChosenProducts().isEmpty()) {
+            List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+            for (int i = 0; i < chosenProducts.size(); i++) {
+                if (chosenProducts.get(i).getCount() == null) {
+                    try {
+                        basketRepository.deleteChosenProductsFromBasket(chosenProducts.get(i).getId());
+                    } catch (Exception ignored) {
+                    }
+                    chosenProductRepository.delete(chosenProducts.get(i));
+                    chosenProducts.remove(chosenProducts.get(i));
+                }
+            }
+        }
+        EditMessageText editMessageText = new EditMessageText();
+        if (!basket.getChosenProducts().isEmpty()) {
+            editMessageText.setText(String.format(makeService.getMessage(Message.PRODUCTS_IN_BASKET, language),
+                    makeService.getChosenProductsNameAndCount(chatId, language)));
+            editMessageText.setChatId(chatId);
+            editMessageText.setReplyMarkup(makeService.forWhenBasketInline(update));
+            editMessageText.enableHtml(true);
+            editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            execute(editMessageText);
+        } else {
+            editMessageText.setText(makeService.getMessage(Message.EMPTY_BASKET, makeService.getUserLanguage(chatId)));
+            editMessageText.setChatId(chatId);
+            editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            makeService.setUserState(chatId, BotState.CHOOSE_MENU);
+            execute(editMessageText);
+            execute(makeService.whenMenuForExistedUser(update));
+        }
     }
 
 }
