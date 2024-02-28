@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.mediasolutions.saleservicebot.entity.Basket;
 import uz.mediasolutions.saleservicebot.entity.ChosenProduct;
+import uz.mediasolutions.saleservicebot.entity.Product;
 import uz.mediasolutions.saleservicebot.entity.TgUser;
 import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.repository.BasketRepository;
@@ -145,9 +146,10 @@ public class TgService extends TelegramLongPollingBot {
                         text.equals(makeService.getMessage(Message.BACK, makeService.getUserLanguage(chatId)))) {
                     execute(makeService.whenOrder(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) &&
-                        makeService.getProductName(makeService.getUserLanguage(chatId)).contains(text)) {
+                       makeService.getProductName(makeService.getUserLanguage(chatId)).contains(text)) {
                     deleteMessage(update);
-                    execute(makeService.whenChosenProduct(update, text, "0"));
+                    Product productByName = makeService.getProductByName(text, makeService.getUserLanguage(chatId));
+                    execute(makeService.whenChosenProduct(update, productByName.getForUnique(), "0"));
                 } else if ((makeService.getUserState(chatId).equals(BotState.CHOOSE_CATEGORY) ||
                         makeService.getUserState(chatId).equals(BotState.CHOOSE_PRODUCT) ||
                         makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT)) &&
@@ -199,14 +201,14 @@ public class TgService extends TelegramLongPollingBot {
                     whenBasket1(update);
                 } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
                         data.substring(0,1).matches("\\d")) {
-                    execute(makeService.whenChosenProduct1(update, data.substring(1),
+                    execute(makeService.whenChosenProduct1(update, Integer.valueOf(data.substring(1)),
                             data.substring(0,1)));
                 } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
                         data.startsWith("continue")) {
                     execute(makeService.whenAddProductToBasket(update, data.substring(8)));
                     execute(makeService.whenChosenCategory2(update));
                 } else if (data.substring(0,1).equals("❌")) {
-                    execute(makeService.whenChosenProduct1(update, data.substring(1),
+                    execute(makeService.whenChosenProduct1(update, Integer.valueOf(data.substring(1)),
                             data.substring(0,1)));
                 } else if (makeService.getUserState(chatId).equals(BotState.PRODUCT_COUNT) &&
                         data.equals("back")) {
@@ -450,6 +452,19 @@ public class TgService extends TelegramLongPollingBot {
             execute(editMessageText);
             execute(makeService.whenMenuForExistedUser(update));
         }
+    }
+
+    public boolean existsProduct(Update update, String text) {
+        boolean b = false;
+        String chatId = makeService.getChatId(update);
+        List<String> productName = makeService.getProductName(makeService.getUserLanguage(chatId));
+        for (String s : productName) {
+            if (Objects.equals(s, text)) {
+                b = true;
+                break;
+            }
+        }
+        return b;
     }
 
 }

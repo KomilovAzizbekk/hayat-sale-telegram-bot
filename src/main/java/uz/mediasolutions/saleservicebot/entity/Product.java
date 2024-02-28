@@ -7,10 +7,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import uz.mediasolutions.saleservicebot.entity.template.AbsUUID;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 
 @Getter
 @Setter
@@ -37,5 +34,8 @@ public class Product extends AbsUUID {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Category category;
+
+    @Column(name = "for_unique", columnDefinition = "serial")
+    private Integer forUnique;
 
 }

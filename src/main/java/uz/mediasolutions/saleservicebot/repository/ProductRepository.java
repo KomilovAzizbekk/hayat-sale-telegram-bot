@@ -31,4 +31,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     Page<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(Pageable pageable, UUID cId, String nameUz, String nameRu);
 
     Page<Product> findAllByOrderByNumberAsc(Pageable pageable);
+
+    Product findByForUnique(Integer num);
 }

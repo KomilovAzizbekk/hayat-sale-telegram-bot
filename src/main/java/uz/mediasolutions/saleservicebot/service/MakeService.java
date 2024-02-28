@@ -961,6 +961,7 @@ public class MakeService {
         String chatId = getChatId(update);
         Basket basket = basketRepository.findByTgUserChatId(chatId);
         List<ChosenProduct> chosenProducts = basket.getChosenProducts();
+        chosenProducts.sort(Comparator.comparing(ChosenProduct::getUpdatedAt));
         Product product = chosenProducts.get(chosenProducts.size() - 1).getProduct();
         String category = getCategoryNameByProduct(product, getUserLanguage(chatId));
         SendMessage sendMessage = new SendMessage(chatId,
@@ -1032,10 +1033,10 @@ public class MakeService {
         return markup;
     }
 
-    public SendMessage whenChosenProduct(Update update, String text, String s) {
+    public SendMessage whenChosenProduct(Update update, Integer forUnique, String s) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
-        Product product = getProductByName(text, language);
+        Product product = productRepository.findByForUnique(forUnique);
         String category = getCategoryNameByProduct(product, language);
         boolean a = false;
 
@@ -1066,8 +1067,8 @@ public class MakeService {
         SendMessage sendMessage = new SendMessage(chatId,
                 String.format(getMessage(Message.CHOSEN_PRODUCT, language),
                         category,
-                        text));
-        sendMessage.setReplyMarkup(forChosenProduct(update, text, s));
+                        getProductNameByLang(chatId, product)));
+        sendMessage.setReplyMarkup(forChosenProduct(update, forUnique, s));
         sendMessage.enableHtml(true);
         setUserState(chatId, BotState.PRODUCT_COUNT);
         return sendMessage;
@@ -1075,7 +1076,7 @@ public class MakeService {
 
     List<Integer> selectedNumbers = new ArrayList<>();
 
-    public EditMessageText whenChosenProduct1(Update update, String text, String s) {
+    public EditMessageText whenChosenProduct1(Update update, Integer forUnique, String s) {
         String x = "0";
         if (!s.equals("❌")) {
             if (!(selectedNumbers.isEmpty() && s.equals("0"))) {
@@ -1093,7 +1094,7 @@ public class MakeService {
 
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
-        Product product = getProductByName(text, language);
+        Product product = productRepository.findByForUnique(forUnique);
         String category = getCategoryNameByProduct(product, language);
         boolean a = false;
 
@@ -1123,16 +1124,24 @@ public class MakeService {
 
         EditMessageText editMessageText = new EditMessageText();
         editMessageText.setText(String.format(getMessage(Message.CHOSEN_PRODUCT, language),
-                category, text));
+                category,
+                getProductNameByLang(chatId, product)));
         editMessageText.setChatId(chatId);
-        editMessageText.setReplyMarkup(forChosenProduct(update, text, x));
+        editMessageText.setReplyMarkup(forChosenProduct(update, forUnique, x));
         editMessageText.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         editMessageText.enableHtml(true);
         setUserState(chatId, BotState.PRODUCT_COUNT);
         return editMessageText;
     }
 
-    private InlineKeyboardMarkup forChosenProduct(Update update, String text, String s) {
+    public String getProductNameByLang(String chatId, Product product) {
+        if (Objects.equals(getUserLanguage(chatId), "Ru"))
+            return product.getNameRu();
+        else
+            return product.getNameUz();
+    }
+
+    private InlineKeyboardMarkup forChosenProduct(Update update, Integer forUnique, String s) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
 
@@ -1173,7 +1182,7 @@ public class MakeService {
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         for (int i = 1; i < 10; i++) {
             InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setCallbackData(i + text);
+            button.setCallbackData(String.valueOf(i) + forUnique);
             button.setText(String.valueOf(i));
             row1.add(button);
             if (row1.size() == 3) {
@@ -1196,8 +1205,8 @@ public class MakeService {
         button4.setText("0");
         button5.setText(getMessage(Message.CONTINUE, language));
 
-        button3.setCallbackData("❌" + text);
-        button4.setCallbackData("0" + text);
+        button3.setCallbackData("❌" + forUnique);
+        button4.setCallbackData("0" + forUnique);
         button5.setCallbackData("continue" + s);
 
         row2.add(button3);

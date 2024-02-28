@@ -1,6 +1,7 @@
 package uz.mediasolutions.saleservicebot.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -42,17 +43,15 @@ public class OrderServiceImpl implements OrderService {
         return ApiResult.success(dto);
     }
 
+    @SneakyThrows
     @Override
     public ApiResult<?> delivered(UUID id) {
         Order order = orderRepository.findById(id).orElseThrow(
                 () -> RestException.restThrow("ID NOT FOUND", HttpStatus.BAD_REQUEST));
         order.setStatus(statusRepository.findByName(StatusName.DELIVERED));
         orderRepository.save(order);
-        try {
-            tgService.execute(makeService.whenDelivered(order.getTgUser().getChatId(), order));
-            tgService.execute(makeService.whenDeliveredEdit(id));
-        } catch (TelegramApiException ignored) {
-        }
+        tgService.execute(makeService.whenDelivered(order.getTgUser().getChatId(), order));
+        tgService.execute(makeService.whenDeliveredEdit(id));
         return ApiResult.success("RECEIVED");
     }
 
