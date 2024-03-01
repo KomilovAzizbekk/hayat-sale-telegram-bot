@@ -99,6 +99,7 @@ public class TgService extends TelegramLongPollingBot {
 //                    execute(makeService.whenSendAppToChannel(update));
                 } else if (makeService.getUserState(chatId).equals(BotState.MENU)) {
                     execute(makeService.whenMenu(update));
+                    execute(makeService.whenSendJoinedNotification(update));
                 } else if (text.equals(makeService.getMessage(Message.MENU_SUG_COMP, makeService.getUserLanguage(chatId))) &&
                         makeService.getUserState(chatId).equals(BotState.CHOOSE_MENU)) {
                     execute(makeService.whenSuggestAndComplaint(update));

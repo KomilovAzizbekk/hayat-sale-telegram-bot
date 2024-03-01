@@ -1987,4 +1987,21 @@ public class MakeService {
         markup.setResizeKeyboard(true);
         return markup;
     }
+
+    public SendMessage whenSendJoinedNotification(Update update) {
+        String chatId = getChatId(update);
+
+        Market market = getMarketByNameFromRepo(update.getMessage().getText(), getUserLanguage(chatId));
+        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+        tgUser.setMarket(market);
+        tgUserRepository.save(tgUser);
+        SendMessage sendMessage = new SendMessage(CHANNEL_ID_APP,
+                String.format(getMessage(Message.APPLICATION, getUserLanguage(chatId)),
+                        tgUser.getId(),
+                        tgUser.getName(),
+                        tgUser.getPhoneNumber(),
+                        getMarketNameByUser(chatId, getUserLanguage(chatId))));
+        sendMessage.enableHtml(true);
+        return sendMessage;
+    }
 }

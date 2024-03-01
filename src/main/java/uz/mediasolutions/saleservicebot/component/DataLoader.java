@@ -17,8 +17,6 @@ import uz.mediasolutions.saleservicebot.service.TgService;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Properties;
 
