@@ -19,7 +19,7 @@ import javax.persistence.*;
 @DynamicUpdate
 @EqualsAndHashCode(callSuper = true)
 @Entity(name = "products")
-@Where(clause = "deleted=false")
+//@Where(clause = "deleted=false")
 @SQLDelete(sql = "UPDATE products SET deleted=true WHERE id=?")
 public class Product extends AbsUUID {
 

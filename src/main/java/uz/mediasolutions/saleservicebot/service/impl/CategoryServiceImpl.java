@@ -79,7 +79,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public ApiResult<?> delete(UUID id) {
         try {
-            List<Product> all = productRepository.findAllByCategoryId(id);
+            List<Product> all = productRepository.findAllByCategoryIdAndDeletedIsFalse(id);
             productRepository.deleteAll(all);
             categoryRepository.deleteById(id);
         } catch (Exception e) {

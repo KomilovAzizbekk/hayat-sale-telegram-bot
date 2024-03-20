@@ -12,25 +12,25 @@ import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
-    Page<Product> findAllByCategoryIdOrderByCreatedAtDesc(Pageable pageable, UUID cId);
+    Page<Product> findAllByCategoryIdAndDeletedIsFalseOrderByCreatedAtDesc(Pageable pageable, UUID cId);
 
-    List<Product> findAllByCategoryId(UUID cId, Sort sort);
+    List<Product> findAllByCategoryIdAndDeletedIsFalse(UUID cId, Sort sort);
 
-    List<Product> findAllByCategoryId(UUID cId);
+    List<Product> findAllByCategoryIdAndDeletedIsFalse(UUID cId);
 
-    Product findByNameRu(String nameRu);
+    Product findByNameRuAndDeletedIsFalse(String nameRu);
 
-    Product findByNameUz(String nameUz);
+    Product findByNameUzAndDeletedIsFalse(String nameUz);
 
-    boolean existsByNumberAndCategoryId(Integer number, UUID categoryId);
+    boolean existsByNumberAndCategoryIdAndDeletedIsFalse(Integer number, UUID categoryId);
 
-    boolean existsByNumberAndCategoryIdAndId(Integer number, UUID categoryId, UUID id);
+    boolean existsByNumberAndCategoryIdAndIdAndDeletedIsFalse(Integer number, UUID categoryId, UUID id);
 
-    Page<Product> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(Pageable pageable, String nameUz, String nameRu);
+    Page<Product> findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseAndDeletedIsFalseOrderByNumberAsc(Pageable pageable, String nameUz, String nameRu);
 
-    Page<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(Pageable pageable, UUID cId, String nameUz, String nameRu);
+    Page<Product> findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseAndDeletedIsFalseOrderByNumberAsc(Pageable pageable, UUID cId, String nameUz, String nameRu);
 
-    Page<Product> findAllByOrderByNumberAsc(Pageable pageable);
+    Page<Product> findAllByDeletedIsFalseOrderByNumberAsc(Pageable pageable);
 
-    Product findByForUnique(Integer num);
+    Product findByForUniqueAndDeletedIsFalse(Integer num);
 }

@@ -205,9 +205,9 @@ public class MakeService {
 
     public Product getProductByName(String name, String languageCode) {
         if (languageCode.equals("Ru"))
-            return productRepository.findByNameRu(name);
+            return productRepository.findByNameRuAndDeletedIsFalse(name);
         else
-            return productRepository.findByNameUz(name);
+            return productRepository.findByNameUzAndDeletedIsFalse(name);
     }
 
     private static final String BUNDLE_BASE_NAME = "messages";
@@ -989,7 +989,7 @@ public class MakeService {
         }
 
         Sort sort = Sort.by(Sort.Order.asc("number"));
-        List<Product> products = productRepository.findAllByCategoryId(category.getId(), sort);
+        List<Product> products = productRepository.findAllByCategoryIdAndDeletedIsFalse(category.getId(), sort);
 
         ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
         List<KeyboardButton> keyboardButtons = new ArrayList<>();
@@ -1036,7 +1036,7 @@ public class MakeService {
     public SendMessage whenChosenProduct(Update update, Integer forUnique, String s) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
-        Product product = productRepository.findByForUnique(forUnique);
+        Product product = productRepository.findByForUniqueAndDeletedIsFalse(forUnique);
         String category = getCategoryNameByProduct(product, language);
         boolean a = false;
 
@@ -1094,7 +1094,7 @@ public class MakeService {
 
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
-        Product product = productRepository.findByForUnique(forUnique);
+        Product product = productRepository.findByForUniqueAndDeletedIsFalse(forUnique);
         String category = getCategoryNameByProduct(product, language);
         boolean a = false;
 

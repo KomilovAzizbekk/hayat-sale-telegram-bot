@@ -32,11 +32,11 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
-                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(pageable, cId, name, name);
+                    .findAllByCategoryIdAndNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseAndDeletedIsFalseOrderByNumberAsc(pageable, cId, name, name);
             Page<ProductResDTO> map = products.map(productMapper::toResDTO);
             return ApiResult.success(map);
         }
-        Page<Product> products = productRepository.findAllByCategoryIdOrderByCreatedAtDesc(pageable, cId);
+        Page<Product> products = productRepository.findAllByCategoryIdAndDeletedIsFalseOrderByCreatedAtDesc(pageable, cId);
         Page<ProductResDTO> map = products.map(productMapper::toResDTO);
         return ApiResult.success(map);
     }
@@ -46,11 +46,11 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
         if (!name.equals("null")) {
             Page<Product> products = productRepository
-                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseOrderByNumberAsc(pageable, name, name);
+                    .findAllByNameRuContainsIgnoreCaseOrNameUzContainsIgnoreCaseAndDeletedIsFalseOrderByNumberAsc(pageable, name, name);
             Page<ProductResDTO> map = products.map(productMapper::toResDTO);
             return ApiResult.success(map);
         }
-        Page<Product> products = productRepository.findAllByOrderByNumberAsc(pageable);
+        Page<Product> products = productRepository.findAllByDeletedIsFalseOrderByNumberAsc(pageable);
         Page<ProductResDTO> map = products.map(productMapper::toResDTO);
         return ApiResult.success(map);
     }
@@ -64,7 +64,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ApiResult<?> add(ProductDTO dto) {
-        if (productRepository.existsByNumberAndCategoryId(dto.getNumber(), dto.getCategoryId()))
+        if (productRepository.existsByNumberAndCategoryIdAndDeletedIsFalse(dto.getNumber(), dto.getCategoryId()))
             throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
         else {
             Product product = toEntity(dto);
@@ -75,8 +75,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ApiResult<?> edit(UUID id, ProductDTO dto) {
-        if (productRepository.existsByNumberAndCategoryId(dto.getNumber(), dto.getCategoryId()) &&
-                !productRepository.existsByNumberAndCategoryIdAndId(dto.getNumber(), dto.getCategoryId(), id))
+        if (productRepository.existsByNumberAndCategoryIdAndDeletedIsFalse(dto.getNumber(), dto.getCategoryId()) &&
+                !productRepository.existsByNumberAndCategoryIdAndIdAndDeletedIsFalse(dto.getNumber(), dto.getCategoryId(), id))
             throw RestException.restThrow("NUMBER MUST ME UNIQUE", HttpStatus.BAD_REQUEST);
         else {
             Product product = productRepository.findById(id).orElseThrow(
