@@ -12,6 +12,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -50,5 +51,8 @@ public class TgUser extends AbsLong {
 
     @Column(name = "lang")
     private String lang;
+
+    @Column(name = "current_order")
+    private UUID currentOrder;
 
 }

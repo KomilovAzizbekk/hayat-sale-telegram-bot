@@ -3,6 +3,7 @@ package uz.mediasolutions.saleservicebot.service;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.*;
@@ -18,6 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.mediasolutions.saleservicebot.entity.*;
 import uz.mediasolutions.saleservicebot.enums.StatusName;
+import uz.mediasolutions.saleservicebot.exceptions.RestException;
 import uz.mediasolutions.saleservicebot.manual.BotState;
 import uz.mediasolutions.saleservicebot.repository.*;
 import uz.mediasolutions.saleservicebot.utills.constants.Message;
@@ -37,10 +39,10 @@ import static java.awt.SystemColor.text;
 public class MakeService {
 
     public String format;
-    public Integer messageId;
     public final String CHANNEL_ID_APP = "-1002046346230";
     public final String CHANNEL_ID_SUG_COMP = "-1001998679932";
     public final String CHANNEL_ID_ORDER = "-1001997761469";
+//    public final String CHANNEL_ID_ORDER = "-1001903287909";
     public final String CHAT_ID_1 = "285710521";
     public final String CHAT_ID_2 = "6931160281";
     public final String CHAT_ID_3 = "1302908674";
@@ -1322,26 +1324,6 @@ public class MakeService {
         List<ChosenProduct> chosenProducts = basket.getChosenProducts();
         chosenProducts.sort(Comparator.comparingLong(ChosenProduct::getId));
 
-        for (ChosenProduct chosenProduct : chosenProducts) {
-            List<InlineKeyboardButton> row = new ArrayList<>();
-
-            InlineKeyboardButton button1 = new InlineKeyboardButton();
-            InlineKeyboardButton button2 = new InlineKeyboardButton();
-            InlineKeyboardButton button3 = new InlineKeyboardButton();
-            button1.setText("➖");
-            button2.setText("❌");
-            button3.setText("➕");
-
-            button1.setCallbackData("minus" + chosenProduct.getId());
-            button2.setCallbackData("delete" + chosenProduct.getId());
-            button3.setCallbackData("plus" + chosenProduct.getId());
-
-            row.add(button1);
-            row.add(button2);
-            row.add(button3);
-
-            keyboardRows.add(row);
-        }
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         List<InlineKeyboardButton> row3 = new ArrayList<>();
@@ -1535,10 +1517,15 @@ public class MakeService {
             ids.add(chosenProduct.getId());
         }
         List<ChosenProduct> allById = chosenProductRepository.findAllById(ids);
-        Order order = Order.builder().tgUser(tgUser)
+        Order order = Order.builder()
+                .tgUser(tgUser)
                 .chosenProducts(allById)
                 .status(statusRepository.findByName(StatusName.PENDING)).build();
-        orderRepository.save(order);
+        Order save = orderRepository.save(order);
+
+        tgUser.setCurrentOrder(save.getId());
+        tgUserRepository.save(tgUser);
+
         basket.setChosenProducts(new ArrayList<>());
         basketRepository.save(basket);
 
@@ -1568,10 +1555,18 @@ public class MakeService {
         return markup;
     }
 
+    //TODO 1 haftadan so'ng ya'ni 06.05.2024 da xabar olinadi
     public SendMessage whenComment(Update update) {
         String chatId = getChatId(update);
-        List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
-        Order order = orders.get(orders.size() - 1);
+        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+        Order order;
+        if (tgUser.getCurrentOrder() != null) {
+            order = orderRepository.findById(tgUser.getCurrentOrder()).orElseThrow(
+                    () -> RestException.restThrow("Order not found", HttpStatus.BAD_REQUEST));
+        } else {
+            List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
+            order = orders.get(orders.size() - 1);
+        }
         Location location = update.getMessage().getLocation();
         order.setLan(location.getLongitude());
         order.setLat(location.getLatitude());
@@ -1602,11 +1597,19 @@ public class MakeService {
         return markup;
     }
 
+    //TODO ....
     public SendMessage whenOrderCreated1(Update update) {
         String chatId = getChatId(update);
+        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+        Order order;
+        if (tgUser.getCurrentOrder() != null) {
+            order = orderRepository.findById(tgUser.getCurrentOrder()).orElseThrow(
+                    () -> RestException.restThrow("Order not found", HttpStatus.BAD_REQUEST));
+        } else {
+            List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
+            order = orders.get(orders.size() - 1);
+        }
 
-        List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
-        Order order = orders.get(orders.size() - 1);
         if (update.getMessage().getText()
                 .equals(getMessage(Message.SKIP_COMMENT, getUserLanguage(chatId)))) {
             order.setComment(null);
@@ -1623,12 +1626,21 @@ public class MakeService {
         return sendMessage;
     }
 
+    //TODO .....
     public SendMessage whenOrderCreated2(Update update) {
         String chatId = getChatId(update);
         String language = getUserLanguage(chatId);
 
-        List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
-        Order order = orders.get(orders.size() - 1);
+        TgUser tgUser = tgUserRepository.findByChatId(chatId);
+        Order order;
+        if (tgUser.getCurrentOrder() != null) {
+            order = orderRepository.findById(tgUser.getCurrentOrder()).orElseThrow(
+                    () -> RestException.restThrow("Order not found", HttpStatus.BAD_REQUEST));
+        } else {
+            List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
+            order = orders.get(orders.size() - 1);
+        }
+
         String name = order.getTgUser().getName();
         String phoneNumber = order.getTgUser().getPhoneNumber();
         String date = order.getOrderedTime().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH-mm-ss"));
@@ -1752,14 +1764,14 @@ public class MakeService {
         return sendMessage;
     }
 
+    public Integer messageId;
+
     public EditMessageText whenAcceptOrderForChannel(Update update) {
         UUID orderId = UUID.fromString((update.getCallbackQuery().getData().substring(3)));
-        Optional<Order> order1 = orderRepository.findById(orderId);
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> RestException.restThrow("ORDER NOT FOUND", HttpStatus.BAD_REQUEST));
         EditMessageText editMessageText = new EditMessageText();
-        Order order = new Order();
-        if (order1.isPresent()) {
-            order = order1.get();
-        }
+
         String chatId = order.getTgUser().getChatId();
         String language = getUserLanguage(chatId);
         String name = order.getTgUser().getName();
@@ -1770,7 +1782,9 @@ public class MakeService {
                 DOMAIN_ORDER + order.getId()) +
                 getMessage(Message.CLICK_COURIER, language) + "</a>";
 
+        order.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         messageId = update.getCallbackQuery().getMessage().getMessageId();
+        Order saved = orderRepository.save(order);
 
         editMessageText.setText(String.format(getMessage(Message.ORDER, language),
                 order.getNumber(),
@@ -1784,7 +1798,7 @@ public class MakeService {
                 getOrderStatusName(chatId)));
         editMessageText.enableHtml(true);
         editMessageText.setChatId(CHANNEL_ID_ORDER);
-        editMessageText.setMessageId(messageId);
+        editMessageText.setMessageId(saved.getMessageId());
         return editMessageText;
     }
 
@@ -1841,12 +1855,9 @@ public class MakeService {
     }
 
     public EditMessageText whenDeliveredEdit(UUID orderId) {
-        Optional<Order> order1 = orderRepository.findById(orderId);
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> RestException.restThrow("ORDER NOT FOUND", HttpStatus.BAD_REQUEST));
 
-        Order order = new Order();
-        if (order1.isPresent()) {
-            order = order1.get();
-        }
         String chatId = order.getTgUser().getChatId();
         String language = getUserLanguage(chatId);
         String name = order.getTgUser().getName();
@@ -1858,7 +1869,7 @@ public class MakeService {
                 getMessage(Message.CLICK_COURIER, language) + "</a>";
 
         EditMessageText editMessageText = new EditMessageText();
-        editMessageText.setMessageId(messageId);
+        editMessageText.setMessageId(order.getMessageId() == null ? messageId : order.getMessageId());
         editMessageText.setChatId(CHANNEL_ID_ORDER);
         editMessageText.setText(
                 String.format(getMessage(Message.ORDER, language),

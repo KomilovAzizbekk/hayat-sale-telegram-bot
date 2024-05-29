@@ -42,6 +42,9 @@ public class Order extends AbsUUID {
     @Column(name = "lat")
     private Double lat;
 
+    @Column(name = "message_id")
+    private Integer messageId;
+
     @Column(name = "comment")
     private String comment;
 

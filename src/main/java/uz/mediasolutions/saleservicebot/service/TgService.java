@@ -43,12 +43,14 @@ public class TgService extends TelegramLongPollingBot {
     public String getBotUsername() {
 //        return "uygogo_bot";
         return "hayat_rasmiydiller_bot";
+//        return "sakaka_bot";
     }
 
     @Override
     public String getBotToken() {
 //        return "5049026983:AAHjxVS4KdTmMLp4x_ir9khH4w1tB4h6pPQ";
         return "6547891262:AAFHC38MvnNiMGi3KotogPbHWDgho1So-iE";
+//        return "6052104473:AAEscLILevwPMcG_00PYqAf-Kpb7eIUCIGg";
     }
 
     @Override
@@ -453,19 +455,6 @@ public class TgService extends TelegramLongPollingBot {
             execute(editMessageText);
             execute(makeService.whenMenuForExistedUser(update));
         }
-    }
-
-    public boolean existsProduct(Update update, String text) {
-        boolean b = false;
-        String chatId = makeService.getChatId(update);
-        List<String> productName = makeService.getProductName(makeService.getUserLanguage(chatId));
-        for (String s : productName) {
-            if (Objects.equals(s, text)) {
-                b = true;
-                break;
-            }
-        }
-        return b;
     }
 
 }
