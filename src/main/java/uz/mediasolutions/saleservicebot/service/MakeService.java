@@ -42,7 +42,7 @@ public class MakeService {
     public final String CHANNEL_ID_APP = "-1002046346230";
     public final String CHANNEL_ID_SUG_COMP = "-1001998679932";
     public final String CHANNEL_ID_ORDER = "-1001997761469";
-//    public final String CHANNEL_ID_ORDER = "-1001903287909";
+    //    public final String CHANNEL_ID_ORDER = "-1001903287909";
     public final String CHAT_ID_1 = "285710521";
     public final String CHAT_ID_2 = "6931160281";
     public final String CHAT_ID_3 = "1302908674";
@@ -111,12 +111,21 @@ public class MakeService {
     }
 
     public String getChosenProductsNameAndCountForOrder(String chatId, String languageCode) {
-        List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
-        Order order = orders.get(orders.size() - 1);
+        TgUser user = tgUserRepository.findByChatId(chatId);
+        Order order;
+
+        if (user.getCurrentOrder() != null) {
+            order = orderRepository.findById(user.getCurrentOrder()).orElse(null);
+        } else {
+            List<Order> orders = orderRepository.findAllByTgUserChatId(chatId);
+            order = orders.get(orders.size() - 1);
+        }
+
         List<ChosenProduct> chosenProducts = order.getChosenProducts();
         chosenProducts.sort(Comparator.comparingLong(ChosenProduct::getId));
         StringBuilder text = new StringBuilder();
-        for (int i = 0; i < chosenProducts.size(); i++) {
+        for (
+                int i = 0; i < chosenProducts.size(); i++) {
             if (languageCode.equals("Ru")) {
                 text.append(i + 1).append(") <b>")
                         .append(chosenProducts.get(i).getProduct().getNameRu())
